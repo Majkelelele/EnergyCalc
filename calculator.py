@@ -25,6 +25,7 @@ def calc_energy_price_monthly():
     cost_energy_alone = (hours_usage_month_kWH * hours_cost_month_kWH).sum()
     return cost_energy_alone + K_month + A_month
 
+
 def calc_brutto_price_monthly():
     return calc_energy_price_monthly() + trade_fee_per_month + additional_shit_idont_know
 
