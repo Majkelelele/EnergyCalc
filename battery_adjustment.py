@@ -1,4 +1,3 @@
-
 class Battery:
     def __init__(self, capacity: int, voltage, power_output, efficiency):
         self.capacity = capacity
@@ -11,33 +10,42 @@ class Battery:
 
     def calc_deposit_profit(self, prices, charging_time):
         size = len(prices)
-        biggest_change = 0
-        coords = (0,0)
         all_amplitudes = []
         for i in range(size):
             for j in range(i + 1, size):
-                if prices[j] - prices[i] > biggest_change:
-                    all_amplitudes.append([prices[j] - prices[i], i, j])
+                amplitude = prices[j] - prices[i]
+                if amplitude > 0:  # Only consider profitable transactions
+                    all_amplitudes.append([amplitude, i, j])
 
-        all_amplitudes.sort(key=lambda x: x[0])
-        idx = 1
-        curr = all_amplitudes[0]
-        while idx < size:
-            if curr[1] == all_amplitudes[idx][1] or curr[2] == all_amplitudes[idx][2]:
-                all_amplitudes.pop(idx)
-            else:
-                curr = all_amplitudes[idx]
-            idx += 1
+        # Sort in descending order to maximize profit
+        all_amplitudes.sort(key=lambda x: x[0], reverse=True)
 
-        sum = 0
+        # Select non-overlapping transactions
+        selected_amplitudes = []
+        used_times = set()
+
+        for amplitude in all_amplitudes:
+            buy_time, sell_time = amplitude[1], amplitude[2]
+            # Check if times are not already used
+            if buy_time not in used_times and sell_time not in used_times:
+                selected_amplitudes.append(amplitude)
+                # print(amplitude)
+                used_times.update([buy_time, sell_time])
+
+        # Calculate total profit based on charging time
+        suma = 0
         idx = 0
+        total_amplitudes = len(selected_amplitudes)
 
-        while charging_time > 0:
-            if charging_time < 1:
-                sum += all_amplitudes[idx] * charging_time
-            sum += all_amplitudes[idx]
+        while charging_time > 0 and idx < total_amplitudes:
+            amplitude = selected_amplitudes[idx][0]
+            if charging_time >= 1:
+                suma += amplitude
+                charging_time -= 1
+            else:
+                suma += amplitude * charging_time
+                charging_time = 0
             idx += 1
-            charging_time -= 1
 
+        return suma
 
-        return sum
