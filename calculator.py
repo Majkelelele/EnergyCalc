@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from battery_adjustment import Battery
 
 possible_cycles = 1500
 max_price_MWh = 1000
@@ -14,15 +16,24 @@ expected_avg_cost_hour_kwh = 0.75
 expected_energy_usage_yearly_kWH = 3000
 expected_average_hour_usage_kWH = expected_energy_usage_yearly_kWH / hours_in_year
 hours_usage_month_kWH = np.full(hours_in_month, expected_average_hour_usage_kWH)
-hours_cost_month_kWH = np.full(hours_in_month, expected_avg_cost_hour_kwh)
+prices = pd.read_csv("prices.csv")
+prices = prices.values/1000
+hours_cost_month_kWH = np.tile(prices, (1, 30))
 K_pge_kWH = 0.0812
 K_month = hours_usage_month_kWH.sum() * K_pge_kWH
 A_mWH = 5
 A_kwH = 5/1000
 A_month = A_kwH * hours_usage_month_kWH.sum()
 
+# battery
+battery = Battery(1000, 20, 230, 0.9)
+print(battery.calc_deposit_profit(prices, 2) * 30)
+
+
+
+
 def calc_energy_price_monthly():
-    cost_energy_alone = (hours_usage_month_kWH * hours_cost_month_kWH).sum()
+    cost_energy_alone = (hours_usage_month_kWH * hours_cost_month_kWH.flatten()).sum()
     return cost_energy_alone + K_month + A_month
 
 
