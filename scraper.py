@@ -45,6 +45,8 @@ try:
 
 
     data = pd.DataFrame(time_price, columns = ["time", "price"])
+    data["price"].to_csv("prices.csv", index=False)
+    
     data.sort_values(by="price", inplace=True)
     data.reset_index(drop=True, inplace=True)
     print(data)
