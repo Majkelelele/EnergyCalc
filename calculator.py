@@ -1,5 +1,5 @@
 import numpy as np
-from battery_adjustment import battery
+from battery_adjustment import Battery
 
 possible_cycles = 1500
 max_price_MWh = 1000
@@ -23,7 +23,8 @@ A_kwH = 5/1000
 A_month = A_kwH * hours_usage_month_kWH.sum()
 
 # battery
-obj
+battery = Battery(1000, 20, 230, 0.9)
+
 
 def calc_energy_price_monthly():
     cost_energy_alone = (hours_usage_month_kWH * hours_cost_month_kWH).sum()
