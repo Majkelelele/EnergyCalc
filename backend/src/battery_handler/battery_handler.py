@@ -1,5 +1,5 @@
 class Battery:
-
+    # TODO - add more description to used algorithms in Battery class 
     def __init__(
             self, 
             capacity: int, 
@@ -16,6 +16,7 @@ class Battery:
         return (self.capacity * self.voltage) \
                 / (self.power_output * self.efficiency)
 
+    # TODO - add one big descriptive comment about what is happening here
     def calc_deposit_profit(self, prices, charging_time):
         size = len(prices)
         all_amplitudes = []
