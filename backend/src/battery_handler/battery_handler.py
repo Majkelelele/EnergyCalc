@@ -5,7 +5,9 @@ class Battery:
             capacity: int, 
             voltage: int, 
             power_output: int, 
-            efficiency: float
+            efficiency: float,
+            life_cycles: int,
+            full_cycles = 0
             ):
         # Watt hours = Amp hours × Volts
         # Milliamp hours = Amp hours × 1000
@@ -18,7 +20,19 @@ class Battery:
         # The battery charging efficiency is the ratio between the energy 
         # consumed by the charging process and saved battery energy.
         self.efficiency = efficiency
+        # The battery life cycles. The number of cycles a battery can undergo 
+        # is directly related to its lifespan. After this number of cycles,
+        # the battery capacity will drop (for example to  80% of its original capacity).
+        self.life_cycles = life_cycles
+        # The number of full cycles the battery has undergone.
+        self.full_cycles = full_cycles
 
+
+    def check_how_many_cycles_and_change_capacity(self):
+        if self.life_cycles >= self.life_cycles:
+            self.capacity = self.capacity * 0.8
+            self.full_cycles = 0
+    
     def charging_time(self):
         # is it good formula?
         return (self.capacity * self.voltage) \
