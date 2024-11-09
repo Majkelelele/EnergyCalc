@@ -2,6 +2,7 @@ class Battery:
     # TODO - add more description to used algorithms in Battery class 
     def __init__(
             self, 
+            price: float,
             capacity: int, 
             DoD: float, 
             socket_power_output: int, 
@@ -9,6 +10,8 @@ class Battery:
             life_cycles: int,
             full_cycles = 0
             ):
+        # Price of the battery
+        self.price = price
         # Battery capacity in kWh
         self.capacity = capacity
         # Depth of Discharge (DoD) is the fraction of the battery that is
@@ -38,7 +41,8 @@ class Battery:
     
 
     # TODO - add one big descriptive comment about what is happening here
-    def calc_deposit_profit(self, prices, charging_time):
+    def calc_deposit_profit(self, prices):
+        charging_time = self.charging_time()
         size = len(prices)
         all_amplitudes = []
         for i in range(size):
@@ -78,6 +82,9 @@ class Battery:
             idx += 1
 
         return sum
+    
+    def calculate_price_for_one_cycle(self):
+        return self.price / self.life_cycles
 
 if __name__ == '__main__':
     battery = Battery(10, 5, 2, 0.9)
