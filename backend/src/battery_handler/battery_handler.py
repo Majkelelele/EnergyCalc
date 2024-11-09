@@ -49,7 +49,6 @@ class Battery:
 
     # TODO - add one big descriptive comment about what is happening here
     def calc_deposit_profit(self, prices):
-        charging_time = self.charging_time()
         size = len(prices)
         all_amplitudes = []
         for i in range(size):
@@ -84,13 +83,13 @@ class Battery:
                 sum += amplitude
                 charging_time -= 1
             else:
-                sum += amplitude * charging_time
+                sum += amplitude * self.charging_time
                 charging_time = 0
             idx += 1
 
         return sum
     
-    def calculate_price_for_one_cycle(self):
+    def one_cycle_cost(self):
         return self.price / self.life_cycles
 
 if __name__ == '__main__':
