@@ -4,30 +4,37 @@ class Battery:
             self, 
             capacity: int, 
             DoD: float, 
-            socket_power_output: int, 
             efficiency: float,
             life_cycles: int,
+            socket_amperage: int = 10,
+            socket_voltage: int = 230,
+            socket_power_output: int = 2.3, 
             full_cycles = 0
             ):
         # Battery capacity in kWh
         self.capacity = capacity
+
         # Depth of Discharge (DoD) is the fraction of the battery that is
         # discharged relative to the overall capacity of the battery.
         self.DoD = DoD
+
         # Socket power output in kW (socket that we plugged the battery in)
         self.socket_power_output = socket_power_output
+
         # The battery charging efficiency is the ratio between the energy 
         # consumed by the charging process and saved battery energy.
         # e.g. 0.9 means 90% efficiency
         self.efficiency = efficiency
+
+        self.charging_time = self.__charging_time()
         # The battery life cycles. The number of cycles a battery can undergo 
         # is directly related to its lifespan. After this number of cycles,
         # the battery capacity will drop (for example to  80% of its original capacity).
         self.life_cycles = life_cycles
         # The number of full cycles the battery has undergone.
         self.full_cycles = full_cycles
-
-    def charging_time(self):
+        
+    def __charging_time(self):
         return (self.capacity * self.DoD) \
                 / (self.socket_power_output * self.efficiency)
 
@@ -35,7 +42,7 @@ class Battery:
         if self.life_cycles >= self.life_cycles:
             self.capacity = self.capacity * 0.8
             self.full_cycles = 0
-    
+            self.DoD = 0.8
 
     # TODO - add one big descriptive comment about what is happening here
     def calc_deposit_profit(self, prices, charging_time):
@@ -80,7 +87,5 @@ class Battery:
         return sum
 
 if __name__ == '__main__':
-    battery = Battery(10, 5, 2, 0.9)
-    prices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    charging_time = battery.charging_time()
-    print(battery.calc_deposit_profit(prices, charging_time))
+    battery = Battery(capacity=15.5, DoD=0.95, socket_power_output=2.3, efficiency=0.9, life_cycles=1000)
+    print(f"{round(battery.charging_time, 2)}h")
