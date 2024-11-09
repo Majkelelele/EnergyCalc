@@ -24,6 +24,7 @@ class Battery:
 
         self.socket_amperage = socket_amperage
         self.socket_voltage = socket_voltage
+
         # Socket power output in kW (socket that we plugged the battery in)
         self.socket_power_output = (socket_amperage * socket_voltage) / 1000
 
@@ -33,10 +34,12 @@ class Battery:
         self.efficiency = efficiency
 
         self.charging_time = self.__charging_time()
+
         # The battery life cycles. The number of cycles a battery can undergo 
         # is directly related to its lifespan. After this number of cycles,
         # the battery capacity will drop (for example to  80% of its original capacity).
         self.life_cycles = life_cycles
+
         # The number of full cycles the battery has undergone.
         self.full_cycles = full_cycles
         
@@ -52,7 +55,7 @@ class Battery:
 
     # TODO - add one big descriptive comment about what is happening here
     # prices - 24 ceny godzinowe
-    def calc_deposit_profit(self, prices):
+    def __calc_amplitudes(self, prices):
         size = len(prices)
         all_amplitudes = []
         for i in range(size):
@@ -61,6 +64,10 @@ class Battery:
                 # We only consider profitable transactions
                 if amplitude > 0:  
                     all_amplitudes.append([amplitude, i, j])
+        return all_amplitudes
+
+    def calc_deposit_profit(self, prices):
+        all_amplitudes = self.__calc_amplitudes(prices)
 
         # Sort in descending order to maximize profit
         all_amplitudes.sort(key=lambda x: x[0], reverse=True)
