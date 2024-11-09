@@ -11,7 +11,7 @@ class Battery:
             life_cycles: int,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
-            full_cycles = 0
+            full_cycles_done = 0
             ):
         # Price of the battery
         self.price = price
@@ -41,16 +41,16 @@ class Battery:
         self.life_cycles = life_cycles
 
         # The number of full cycles the battery has undergone.
-        self.full_cycles = full_cycles
+        self.full_cycles_done = full_cycles_done
         
     def __charging_time(self):
         return (self.capacity * self.DoD) \
                 / (self.socket_power_output * self.efficiency)
 
     def check_how_many_cycles_and_change_capacity(self):
-        if self.life_cycles >= self.life_cycles:
+        if self.life_cycles >= self.full_cycles_done:
             self.capacity = self.capacity * 0.8
-            self.full_cycles = 0
+            self.full_cycles_done = 0
             self.DoD = 0.8
 
     # TODO - add one big descriptive comment about what is happening here
