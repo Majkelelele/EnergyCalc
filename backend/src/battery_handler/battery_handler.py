@@ -1,4 +1,7 @@
 from battery_handler.consts import DEFAULT_VOLTAGE, DEFAULT_AMPERAGE
+import pandas as pd
+from math import ceil
+import numpy as np
 
 class Battery:
     # TODO - add more description to used algorithms in Battery class 
@@ -53,55 +56,63 @@ class Battery:
             self.full_cycles_done = 0
             self.DoD = 0.8
 
-    # TODO - add one big descriptive comment about what is happening here
-    # prices - 24 ceny godzinowe
-    def __calc_amplitudes(self, prices):
-        size = len(prices)
-        all_amplitudes = []
-        for i in range(size):
-            for j in range(i + 1, size):
-                amplitude = prices[j] - prices[i]
-                # We only consider profitable transactions
-                if amplitude > 0:  
-                    all_amplitudes.append([amplitude, i, j])
-        return all_amplitudes
-
-    def calc_deposit_profit(self, prices):
-        all_amplitudes = self.__calc_amplitudes(prices)
-
-        # Sort in descending order to maximize profit
-        all_amplitudes.sort(key=lambda x: x[0], reverse=True)
-
-        # Select non-overlapping transactions
-        selected_amplitudes = []
-        used_times = set()
-
-        for amplitude in all_amplitudes:
-            buy_time, sell_time = amplitude[1], amplitude[2]
-            # Check if times are not already used
-            if buy_time not in used_times and sell_time not in used_times:
-                selected_amplitudes.append(amplitude)
-                used_times.update([buy_time, sell_time])
-
-        # Calculate total profit based on charging time
-        sum = 0
-        idx = 0
-        total_amplitudes = len(selected_amplitudes)
-
-        while charging_time > 0 and idx < total_amplitudes:
-            amplitude = selected_amplitudes[idx][0]
-            if charging_time >= 1:
-                sum += amplitude
-                charging_time -= 1
-            else:
-                sum += amplitude * self.charging_time
-                charging_time = 0
-            idx += 1
-
-        return sum
-    
     def one_cycle_cost(self):
         return self.price / self.life_cycles
+
+    # TODO - add one big descriptive comment about what is happening here
+    # prices - 24 ceny godzinowe
+    # TODO add adjusting by DoD
+    def __calc_min_interval(self, prices: pd.DataFrame):
+        size = len(prices)
+        
+        
+        curr_sum = np.sum(prices[:ceil(self.charging_time)])
+        min_price_sum = curr_sum
+        curr_start = 0
+        final_start = 0
+        final_end = ceil(self.charging_time) - 1
+        for curr_hour in range(ceil(self.charging_time), size):
+            if curr_sum < min_price_sum:
+                min_price_sum = curr_sum
+                final_end = curr_hour - 1
+                final_start = curr_start
+
+            curr_sum -= prices[curr_start]
+            curr_sum += prices[curr_hour]
+            curr_start += 1
+        return min_price_sum, final_start, final_end
+    
+    def __calc_max_interval(self, prices: pd.DataFrame, min_end: int):
+        size = len(prices)
+        curr_start = min_end + 1
+        curr_sum = np.sum(prices[curr_start: curr_start + ceil(self.charging_time)])
+        max_price_sum = curr_sum
+        
+        final_start = curr_start
+        final_end =  curr_start + ceil(self.charging_time) - 1
+
+        for curr_hour in range(final_end + 1, size):
+            if curr_sum > max_price_sum:
+                max_price_sum = curr_sum
+                final_end = curr_hour - 1
+                final_start = curr_start
+
+            curr_sum -= prices[curr_start]
+            curr_sum += prices[curr_hour]
+            curr_start += 1
+        return max_price_sum, final_start, final_end
+    
+    def efficient_charging_algorithm(self, prices: pd.DataFrame):
+        min_price_sum, min_interval_start, min_interval_end = \
+                                                self.__calc_min_interval(prices)
+        max_price_sum, max_interval_start, max_interval_end = \
+                            self.__calc_max_interval(prices, min_interval_end)
+        
+        return max_price_sum - min_price_sum
+
+    def calc_deposit_profit(self, prices):
+        prices_new = prices.flatten()
+        return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
 
 if __name__ == '__main__':
     battery = Battery(capacity=10, DoD=0.95, efficiency=0.9, life_cycles=1000)
