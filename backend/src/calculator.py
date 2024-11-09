@@ -1,31 +1,37 @@
-import numpy as np
 import pandas as pd
 from battery_handler.battery_handler import Battery
-from some_module.some_file import some_fun
 
 possible_cycles = 1500
-max_price_MWh = 1000
-min_price_MWh = 100
 battery_price = 20000
 installation_cost = 0
 # PGE
 trade_fee_per_month = 49.90
+trade_fee_per_day = trade_fee_per_month/30
 additional_shit_idont_know = 0
-hours_in_month = 30 * 24
-hours_in_year = 12 * hours_in_month
-expected_avg_cost_hour_kwh = 0.75
 expected_energy_usage_yearly_kWH = 3000
-expected_average_hour_usage_kWH = expected_energy_usage_yearly_kWH / hours_in_year
-hours_usage_month_kWH = np.full(hours_in_month, expected_average_hour_usage_kWH)
+expected_daily_energy_usage = expected_energy_usage_yearly_kWH / 365
+
+# import daily distribution of power use per hour
+expected_daily_energy_distribution = pd.read_csv("../data/distribution.csv").values
+
+# calculate daily usage of power in kWH per hour
+hours_usage_day_kWH = expected_daily_energy_distribution * expected_daily_energy_usage
+# fetching daily dynamic prices per hour per mWh
 prices = pd.read_csv("../data/prices.csv")
 # prices are in zl per MWh, we want them in zl per kWh
 prices = prices.values / 1000
-hours_cost_month_kWH = np.tile(prices, (1, 30))
+hours_cost_day_kWH = prices
+
+# calculating K from cost equation - see backend/docs/Zalacznik-nr-2-Algorytm-wyznaczania-ceny.pdf
 K_pge_kWH = 0.0812
-K_month = hours_usage_month_kWH.sum() * K_pge_kWH
+K_month = hours_usage_day_kWH.sum() * K_pge_kWH
+K_day = K_month/30
+
+# calculating A from cost equation
 A_mWH = 5
 A_kwH = 5 / 1000
-A_month = A_kwH * hours_usage_month_kWH.sum()
+A_month = A_kwH * hours_usage_day_kWH.sum()
+A_day = A_month/30
 
 # battery
 battery = Battery(capacity=10, DoD=0.95, socket_power_output=2.3, efficiency=0.9)
@@ -34,20 +40,12 @@ print(battery.calc_deposit_profit(prices, 2) * 30)
 
 
 
-def calc_energy_price_monthly():
-    cost_energy_alone = (hours_usage_month_kWH * hours_cost_month_kWH.flatten()).sum()
-    return cost_energy_alone + K_month + A_month
+def calc_energy_price_daily():
+    cost_energy_alone = (hours_usage_day_kWH * hours_cost_day_kWH).sum()
+    return cost_energy_alone + K_day + A_day
 
 
-def calc_brutto_price_monthly():
-    return calc_energy_price_monthly() + trade_fee_per_month + additional_shit_idont_know
+def calc_brutto_price_daily():
+    return calc_energy_price_daily() + trade_fee_per_day + additional_shit_idont_know
 
-
-print(f"energy cost per month = {calc_brutto_price_monthly()}")
-some_fun()
-
-
-
-
-
-
+print(f"energy cost per day = {calc_brutto_price_daily()}")
