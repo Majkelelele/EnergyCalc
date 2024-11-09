@@ -20,6 +20,7 @@ class Battery:
         self.efficiency = efficiency
 
     def charging_time(self):
+        # is it good formula?
         return (self.capacity * self.voltage) \
                 / (self.power_output * self.efficiency)
 
