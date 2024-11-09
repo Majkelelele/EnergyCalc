@@ -3,22 +3,22 @@ class Battery:
     def __init__(
             self, 
             capacity: int, 
-            voltage: int, 
-            power_output: int, 
+            DoD: float, 
+            socket_power_output: int, 
             efficiency: float,
             life_cycles: int,
             full_cycles = 0
             ):
-        # Watt hours = Amp hours × Volts
-        # Milliamp hours = Amp hours × 1000
-        # Battery capacity in Ah
+        # Battery capacity in kWh
         self.capacity = capacity
-        # Battery voltage in V
-        self.voltage = voltage
-        # Battery power output in W
-        self.power_output = power_output
+        # Depth of Discharge (DoD) is the fraction of the battery that is
+        # discharged relative to the overall capacity of the battery.
+        self.DoD = DoD
+        # Socket power output in kW (socket that we plugged the battery in)
+        self.socket_power_output = socket_power_output
         # The battery charging efficiency is the ratio between the energy 
         # consumed by the charging process and saved battery energy.
+        # e.g. 0.9 means 90% efficiency
         self.efficiency = efficiency
         # The battery life cycles. The number of cycles a battery can undergo 
         # is directly related to its lifespan. After this number of cycles,
@@ -27,16 +27,15 @@ class Battery:
         # The number of full cycles the battery has undergone.
         self.full_cycles = full_cycles
 
+    def charging_time(self):
+        return (self.capacity * self.DoD) \
+                / (self.socket_power_output * self.efficiency)
 
     def check_how_many_cycles_and_change_capacity(self):
         if self.life_cycles >= self.life_cycles:
             self.capacity = self.capacity * 0.8
             self.full_cycles = 0
     
-    def charging_time(self):
-        # is it good formula?
-        return (self.capacity * self.voltage) \
-                / (self.power_output * self.efficiency)
 
     # TODO - add one big descriptive comment about what is happening here
     def calc_deposit_profit(self, prices, charging_time):

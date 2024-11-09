@@ -28,7 +28,7 @@ A_kwH = 5 / 1000
 A_month = A_kwH * hours_usage_month_kWH.sum()
 
 # battery
-battery = Battery(capacity=1000, voltage=20, power_output=230, efficiency=0.9)
+battery = Battery(capacity=10, DoD=0.95, socket_power_output=2.3, efficiency=0.9)
 print(battery.calc_deposit_profit(prices, 2) * 30)
 
 
