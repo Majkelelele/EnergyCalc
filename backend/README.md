@@ -16,4 +16,5 @@ To invoke below command we need to be in a directory with **pyproject.toml**
 project still works fine !!!
 
 # Battery charging formulas
+Formula we use in Battery.charging_time is from below site in method 4
 - https://www.jackery.com/blogs/knowledge/how-to-calculate-battery-charging-time

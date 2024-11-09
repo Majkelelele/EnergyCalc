@@ -33,17 +33,22 @@ A_kwH = 5 / 1000
 A_month = A_kwH * hours_usage_day_kWH.sum()
 A_day = A_month/30
 
-# battery
-# battery = Battery(capacity=1000, voltage=20, power_output=230, efficiency=0.9)
-# print(battery.calc_deposit_profit(prices, 2) * 30)
-
-
 def calc_energy_price_daily():
     cost_energy_alone = (hours_usage_day_kWH * hours_cost_day_kWH).sum()
     return cost_energy_alone + K_day + A_day
 
-
 def calc_brutto_price_daily():
     return calc_energy_price_daily() + trade_fee_per_day + additional_shit_idont_know
 
-print(f"energy cost per day = {calc_brutto_price_daily()}")
+if __name__ == "__main__":
+    # battery
+    battery = Battery(
+        price=16000, 
+        capacity=10, 
+        DoD=0.95, 
+        efficiency=0.9, 
+        life_cycles=6000
+        )
+    print(f"deposit profit: {battery.calc_deposit_profit(prices.copy())}")
+    print(f"energy cost per day = {round(calc_brutto_price_daily(), 3)}zl")
+
