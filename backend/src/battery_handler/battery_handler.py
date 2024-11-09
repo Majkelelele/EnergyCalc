@@ -1,3 +1,5 @@
+from battery_handler.consts import DEFAULT_VOLTAGE, DEFAULT_AMPERAGE
+
 class Battery:
     # TODO - add more description to used algorithms in Battery class 
     def __init__(
@@ -7,9 +9,8 @@ class Battery:
             DoD: float, 
             efficiency: float,
             life_cycles: int,
-            socket_amperage: int = 10,
-            socket_voltage: int = 230,
-            socket_power_output: int = 2.3, 
+            socket_amperage: int = DEFAULT_AMPERAGE,
+            socket_voltage: int = DEFAULT_VOLTAGE,
             full_cycles = 0
             ):
         # Price of the battery
@@ -21,8 +22,10 @@ class Battery:
         # discharged relative to the overall capacity of the battery.
         self.DoD = DoD
 
+        self.socket_amperage = socket_amperage
+        self.socket_voltage = socket_voltage
         # Socket power output in kW (socket that we plugged the battery in)
-        self.socket_power_output = socket_power_output
+        self.socket_power_output = (socket_amperage * socket_voltage) / 1000
 
         # The battery charging efficiency is the ratio between the energy 
         # consumed by the charging process and saved battery energy.
@@ -48,6 +51,7 @@ class Battery:
             self.DoD = 0.8
 
     # TODO - add one big descriptive comment about what is happening here
+    # prices - 24 ceny godzinowe
     def calc_deposit_profit(self, prices):
         size = len(prices)
         all_amplitudes = []
@@ -93,5 +97,5 @@ class Battery:
         return self.price / self.life_cycles
 
 if __name__ == '__main__':
-    battery = Battery(capacity=15.5, DoD=0.95, socket_power_output=2.3, efficiency=0.9, life_cycles=1000)
+    battery = Battery(capacity=10, DoD=0.95, efficiency=0.9, life_cycles=1000)
     print(f"{round(battery.charging_time, 2)}h")
