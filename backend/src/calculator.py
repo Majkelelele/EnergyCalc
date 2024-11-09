@@ -18,16 +18,17 @@ expected_energy_usage_yearly_kWH = 3000
 expected_average_hour_usage_kWH = expected_energy_usage_yearly_kWH / hours_in_year
 hours_usage_month_kWH = np.full(hours_in_month, expected_average_hour_usage_kWH)
 prices = pd.read_csv("../data/prices.csv")
-prices = prices.values/1000
+# prices are in zl per MWh, we want them in zl per kWh
+prices = prices.values / 1000
 hours_cost_month_kWH = np.tile(prices, (1, 30))
 K_pge_kWH = 0.0812
 K_month = hours_usage_month_kWH.sum() * K_pge_kWH
 A_mWH = 5
-A_kwH = 5/1000
+A_kwH = 5 / 1000
 A_month = A_kwH * hours_usage_month_kWH.sum()
 
 # battery
-battery = Battery(1000, 20, 230, 0.9)
+battery = Battery(capacity=1000, voltage=20, power_output=230, efficiency=0.9)
 print(battery.calc_deposit_profit(prices, 2) * 30)
 
 
