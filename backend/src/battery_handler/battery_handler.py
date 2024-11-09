@@ -7,9 +7,16 @@ class Battery:
             power_output: int, 
             efficiency: float
             ):
+        # Watt hours = Amp hours × Volts
+        # Milliamp hours = Amp hours × 1000
+        # Battery capacity in Ah
         self.capacity = capacity
+        # Battery voltage in V
         self.voltage = voltage
+        # Battery power output in W
         self.power_output = power_output
+        # The battery charging efficiency is the ratio between the energy 
+        # consumed by the charging process and saved battery energy.
         self.efficiency = efficiency
 
     def charging_time(self):
@@ -58,3 +65,8 @@ class Battery:
 
         return sum
 
+if __name__ == '__main__':
+    battery = Battery(10, 5, 2, 0.9)
+    prices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    charging_time = battery.charging_time()
+    print(battery.calc_deposit_profit(prices, charging_time))

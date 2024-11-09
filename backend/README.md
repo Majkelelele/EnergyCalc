@@ -11,3 +11,6 @@ To invoke below command we need to be in a directory with pyproject.toml
 
 !!! Don't know why pip install -e . creates egg folder, after removing it 
 project still works fine !!!
+
+# Battery charging formulas
+- https://www.jackery.com/blogs/knowledge/how-to-calculate-battery-charging-time
