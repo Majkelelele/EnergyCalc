@@ -113,6 +113,11 @@ class Battery:
     def calc_deposit_profit(self, prices):
         prices_new = prices.flatten()
         return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
+    
+    def calc_battery_autonsumption_cost(self, prices, energy_needed): 
+        cost_charging = prices[:ceil((energy_needed / self.capacity) * self.charging_time)].sum()
+        return cost_charging + self.one_cycle_cost()
+
 
 if __name__ == '__main__':
     battery = Battery(capacity=10, DoD=0.95, efficiency=0.9, life_cycles=1000)

@@ -1,5 +1,6 @@
 import pandas as pd
 from battery_handler.battery_handler import Battery
+import matplotlib.pyplot as plt
 
 possible_cycles = 1500
 battery_price = 20000
@@ -40,8 +41,10 @@ def calc_energy_price_daily():
 def calc_brutto_price_daily():
     return calc_energy_price_daily() + trade_fee_per_day + additional_shit_idont_know
 
+
+
 if __name__ == "__main__":
-    # battery
+    # # battery
     battery = Battery(
         price=16000, 
         capacity=10, 
@@ -51,4 +54,30 @@ if __name__ == "__main__":
         )
     print(f"deposit profit: {battery.calc_deposit_profit(prices.copy())}")
     print(f"energy cost per day = {round(calc_brutto_price_daily(), 3)}zl")
+    print(f"energy cost if using battery for autoconsumption {battery.calc_battery_autonsumption_cost(prices,expected_daily_energy_usage)}")
+    # Example inputs
+    # prices = np.random.uniform(0.1, 0.5, 96)  # Random energy prices for 96 slots
+    # usage = np.random.uniform(0, 2, 96)  # Random energy usage for 96 slots
+
+    # Optimize battery usage
+    # total_cost, battery_states, actions = optimize_battery(prices, hours_usage_day_kWH)
+
+    # # Print results
+    # print(f"Total Cost: {total_cost}")
+    # print(f"Battery States: {battery_states}")
+    # print(f"Actions: {actions}")
+    # plt.plot(np.arange(0, 24), prices, label="Energy Prices")
+    # plt.xlabel("Hour of Day")
+    # plt.ylabel("Price (arbitrary units)")
+    # plt.title("Energy Prices Over 24 Hours")
+    # plt.legend()
+    # plt.grid(True)
+    # # plt.show()
+    # # plt.savefig("plot.png")  # Save the plot to a file
+
+    # plt.plot(np.arange(0, 24), hours_usage_day_kWH, label="usage")
+   
+    # # plt.show()
+    # plt.savefig("plot.png")  # Save the plot to a file
+
 
