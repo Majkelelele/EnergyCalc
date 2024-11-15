@@ -8,6 +8,7 @@ class Battery:
     def __init__(
             self, 
             price: float,
+            charge_level: float,
             capacity: int, 
             DoD: float, 
             efficiency: float,
@@ -18,6 +19,8 @@ class Battery:
             ):
         # Price of the battery
         self.price = price
+        # Charge level of the battery in kWh
+        self.charge_level = charge_level
         # Battery capacity in kWh
         self.capacity = capacity
 
@@ -47,11 +50,20 @@ class Battery:
         self.full_cycles_done = full_cycles_done
         
     def __charging_time(self):
-        return (self.capacity * self.DoD) \
+        return (self.capacity * self.DoD - self.charge_level) \
                 / (self.socket_power_output * self.efficiency)
 
+    # Depends if we get the current
+    def charge(self, curr_charge: float):
+        self.charge_level = curr_charge
+        self.charging_time = self.__charging_time()
+    
+    def discharge(self, curr_charge: float):
+        self.charge_level = curr_charge
+        self.charging_time = self.__charging_time()
+
     def check_how_many_cycles_and_change_capacity(self):
-        if self.life_cycles >= self.full_cycles_done:
+        if self.life_cycles <= self.full_cycles_done:
             self.capacity = self.capacity * 0.8
             self.full_cycles_done = 0
             self.DoD = 0.8
@@ -115,5 +127,5 @@ class Battery:
         return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
 
 if __name__ == '__main__':
-    battery = Battery(capacity=10, DoD=0.95, efficiency=0.9, life_cycles=1000)
+    battery = Battery(capacity=10, charge_level=0, DoD=0.95, efficiency=0.9, life_cycles=6000)
     print(f"{round(battery.charging_time, 2)}h")
