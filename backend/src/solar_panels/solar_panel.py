@@ -1,5 +1,5 @@
 class SolarPanel:
-    def __init__(self, capacity_kw, efficiency, tilt_angle=30, orientation='south'):
+    def __init__(self, capacity_kw, efficiency=0.85, tilt_angle=30, orientation='south'):
         """
         Initialize the solar panel system.
         

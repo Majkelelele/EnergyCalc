@@ -1,6 +1,7 @@
 import pandas as pd
 from battery_handler.battery_handler import Battery
 import matplotlib.pyplot as plt
+from solar_panels.solar_panel import SolarPanel
 
 possible_cycles = 1500
 battery_price = 20000
@@ -47,8 +48,25 @@ def calc_brutto_price_daily(solar_deduction):
 
 
 
+def test_solar_panel_system():
+    solar_system = SolarPanel(capacity_kw=4, efficiency=0.85)
+
+    daily_production = solar_system.estimate_production(peak_sun_hours=4, weather_factor=0.9)
+    print(f"Estimated daily production: {daily_production:.2f} kWh")
+
+    sun_hours_forecast = [0.2, 0.4, 0.8, 1.0, 1.0, 0.7, 0.3, 0.1] 
+    hourly_production = solar_system.forecast_daily_production(sun_hours_forecast)
+    print("Hourly production forecast:", hourly_production)
+
+    current_irradiance = 600
+    real_time_production = solar_system.get_real_time_production(current_irradiance)
+    print(f"Real-time production: {real_time_production:.2f} kW")
+
+
+
 if __name__ == "__main__":
     solar_power_output = solar_power_monthly.loc[solar_power_monthly["Month"] == current_month, "PowerOutput"].values[0]
+    print(solar_power_output)
 
     battery = Battery(
         price=16000, 
@@ -63,6 +81,9 @@ if __name__ == "__main__":
     print(f"energy cost per day if using only grid and solar panels = {round(calc_brutto_price_daily(solar_power_output), 3)}zl")
     print(f"energy cost if using battery for autoconsumption = {round(battery.calc_battery_autonsumption_cost(prices ,expected_daily_energy_usage),3)}")
     print(f"energy cost if using battery for autoconsumption and using solar = {round(battery.calc_battery_autonsumption_cost(prices - solar_power_output / number_of_segments_daily,expected_daily_energy_usage),3)}")
+
+
+    test_solar_panel_system()
 
     # Example inputs
     # prices = np.random.uniform(0.1, 0.5, 96)  # Random energy prices for 96 slots
