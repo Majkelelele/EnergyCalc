@@ -39,7 +39,7 @@ A_month = A_kwH * hours_usage_day_kWH.sum()
 A_day = A_month/30
 
 def calc_energy_price_daily(solar_deduction):
-    cost_energy_alone = ((hours_usage_day_kWH - solar_deduction) * hours_cost_day_kWH).sum()
+    cost_energy_alone = ((hours_usage_day_kWH - solar_deduction/number_of_segments_daily) * hours_cost_day_kWH).sum()
     return cost_energy_alone + K_day + A_day
 
 def calc_brutto_price_daily(solar_deduction):
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     print(f"profit if loading battery from grid and selling to grid when its more expensive - partly charging with solar): {round(battery.calc_deposit_profit(prices.copy() - solar_power_output / number_of_segments_daily),3)}")
     print(f"energy cost per day if using only grid = {round(calc_brutto_price_daily(0), 3)}zl")
     print(f"energy cost per day if using only grid and solar panels = {round(calc_brutto_price_daily(solar_power_output), 3)}zl")
-    print(f"energy cost if using battery for autoconsumption = {round(battery.calc_battery_autonsumption_cost(prices ,expected_daily_energy_usage),3)}")
+    print(f"energy cost if using battery for autoconsumption = {round(battery.calc_battery_autonsumption_cost(prices,expected_daily_energy_usage),3)}")
     print(f"energy cost if using battery for autoconsumption and using solar = {round(battery.calc_battery_autonsumption_cost(prices - solar_power_output / number_of_segments_daily,expected_daily_energy_usage),3)}")
 
     # Example inputs
