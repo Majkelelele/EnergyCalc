@@ -121,7 +121,7 @@ class Battery:
         i = 0
         while(energy_needed >= charging_per_hour):
             energy_needed -= charging_per_hour
-            charging_cost += prices[i]
+            charging_cost += charging_per_hour * prices[i]
             i += 1
 
         charging_cost += energy_needed  * prices[i]
