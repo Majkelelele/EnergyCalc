@@ -115,8 +115,19 @@ class Battery:
         return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
     
     def calc_battery_autonsumption_cost(self, prices, energy_needed): 
-        cost_charging = prices[:ceil((energy_needed / self.capacity) * self.charging_time)].sum()
-        return cost_charging + self.one_cycle_cost()
+        prices = prices.flatten()
+        charging_per_hour = self.capacity / self.charging_time
+        charging_cost = 0
+        i = 0
+        while(energy_needed >= charging_per_hour):
+            energy_needed -= charging_per_hour
+            charging_cost += prices[i]
+            i += 1
+
+        charging_cost += energy_needed  * prices[i]
+
+        
+        return charging_cost + self.one_cycle_cost()
 
 
 if __name__ == '__main__':

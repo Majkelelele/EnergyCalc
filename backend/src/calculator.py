@@ -57,12 +57,11 @@ if __name__ == "__main__":
         efficiency=0.9, 
         life_cycles=6000
         )
-    print(f"profit if loading battery from grid and selling to grid when its more expensive : {round(battery.calc_deposit_profit(prices.copy()/ number_of_segments_daily),3)}")
-    print(f"profit if loading battery from grid and selling to grid when its more expensive - partly charging with solar): {round(battery.calc_deposit_profit(prices.copy() - solar_power_output / number_of_segments_daily),3)}")
+    print(f"profit if loading battery from grid and selling to grid when its more expensive : {round(battery.calc_deposit_profit(prices.copy()),3)}")
     print(f"energy cost per day if using only grid = {round(calc_brutto_price_daily(0), 3)}zl")
     print(f"energy cost per day if using only grid and solar panels = {round(calc_brutto_price_daily(solar_power_output), 3)}zl")
     print(f"energy cost if using battery for autoconsumption = {round(battery.calc_battery_autonsumption_cost(prices,expected_daily_energy_usage),3)}")
-    print(f"energy cost if using battery for autoconsumption and using solar = {round(battery.calc_battery_autonsumption_cost(prices - solar_power_output / number_of_segments_daily,expected_daily_energy_usage),3)}")
+    print(f"energy cost if using battery for autoconsumption and using solar = {round(battery.calc_battery_autonsumption_cost(prices, expected_daily_energy_usage  - solar_power_output),3)}")
 
     # Example inputs
     # prices = np.random.uniform(0.1, 0.5, 96)  # Random energy prices for 96 slots
