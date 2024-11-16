@@ -54,7 +54,6 @@ class Battery:
                 / (self.socket_power_output * self.efficiency)
     
     def __calculate_charging_per_hour(self):
-        print(self.capacity / self.charging_time)
         return self.capacity / self.charging_time
 
     def check_how_many_cycles_and_change_capacity(self):
@@ -84,8 +83,8 @@ class Battery:
                 final_end = curr_hour - 1
                 final_start = curr_start
 
-            curr_sum -= self.charging_per_hour * prices[curr_start]
-            curr_sum += self.charging_per_hour * prices[curr_hour]
+            curr_sum -= prices[curr_start]
+            curr_sum += prices[curr_hour]
             curr_start += 1
         return min_price_sum, final_start, final_end
     
@@ -104,8 +103,8 @@ class Battery:
                 final_end = curr_hour - 1
                 final_start = curr_start
 
-            curr_sum -= self.charging_per_hour * prices[curr_start]
-            curr_sum += self.charging_per_hour * prices[curr_hour]
+            curr_sum -= prices[curr_start]
+            curr_sum += prices[curr_hour]
             curr_start += 1
         return max_price_sum, final_start, final_end
     
@@ -114,11 +113,11 @@ class Battery:
                                                 self.__calc_min_interval(prices)
         max_price_sum, max_interval_start, max_interval_end = \
                             self.__calc_max_interval(prices, min_interval_end)
-        print(f"self.charging_per_hour: {self.charging_per_hour}")
-        return max_price_sum - min_price_sum
+        return (max_price_sum - min_price_sum) * self.charging_per_hour
 
     def calc_deposit_profit(self, prices):
         prices_new = prices.flatten()
+        print(f"roznica = {self.efficient_charging_algorithm(prices_new)}")
         return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
     
     def calc_battery_autonsumption_cost(self, prices, energy_needed): 
@@ -131,7 +130,6 @@ class Battery:
             i += 1
 
         charging_cost += energy_needed  * prices[i]
-
         
         return charging_cost + self.one_cycle_cost()
 
