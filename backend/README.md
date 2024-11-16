@@ -1,3 +1,11 @@
+# !!! if your .git files are corrupted in WSL
+error: object file .git/objects/e1/ref is empty <br>
+error: object file .git/objects/e1/ref is empty <br>
+fatal: loose object e1ref (stored in .git/objects/e1/ref) is corrupt <br>
+__Do__: <br>
+find .git/objects/ -size 0 -exec rm -f {} \; <br>
+git fetch origin
+
 # Backend installation as package
 https://stackoverflow.com/questions/77507389/python-project-directory-structure-modulenotfounderror
 
