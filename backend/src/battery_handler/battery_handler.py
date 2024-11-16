@@ -14,7 +14,7 @@ class Battery:
             life_cycles: int,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
-            full_cycles_done = 0
+            full_cycles_done = 0,
             ):
         # Price of the battery
         self.price = price
@@ -45,10 +45,17 @@ class Battery:
 
         # The number of full cycles the battery has undergone.
         self.full_cycles_done = full_cycles_done
+
+        # how many kwh can be charged per hour
+        self.charging_per_hour = self.__calculate_charging_per_hour()
         
     def __charging_time(self):
         return (self.capacity * self.DoD) \
                 / (self.socket_power_output * self.efficiency)
+    
+    def __calculate_charging_per_hour(self):
+        print(self.capacity / self.charging_time)
+        return self.capacity / self.charging_time
 
     def check_how_many_cycles_and_change_capacity(self):
         if self.life_cycles >= self.full_cycles_done:
@@ -77,8 +84,8 @@ class Battery:
                 final_end = curr_hour - 1
                 final_start = curr_start
 
-            curr_sum -= prices[curr_start]
-            curr_sum += prices[curr_hour]
+            curr_sum -= self.charging_per_hour * prices[curr_start]
+            curr_sum += self.charging_per_hour * prices[curr_hour]
             curr_start += 1
         return min_price_sum, final_start, final_end
     
@@ -97,8 +104,8 @@ class Battery:
                 final_end = curr_hour - 1
                 final_start = curr_start
 
-            curr_sum -= prices[curr_start]
-            curr_sum += prices[curr_hour]
+            curr_sum -= self.charging_per_hour * prices[curr_start]
+            curr_sum += self.charging_per_hour * prices[curr_hour]
             curr_start += 1
         return max_price_sum, final_start, final_end
     
@@ -107,7 +114,7 @@ class Battery:
                                                 self.__calc_min_interval(prices)
         max_price_sum, max_interval_start, max_interval_end = \
                             self.__calc_max_interval(prices, min_interval_end)
-        
+        print(f"self.charging_per_hour: {self.charging_per_hour}")
         return max_price_sum - min_price_sum
 
     def calc_deposit_profit(self, prices):
@@ -116,12 +123,11 @@ class Battery:
     
     def calc_battery_autonsumption_cost(self, prices, energy_needed): 
         prices = prices.flatten()
-        charging_per_hour = self.capacity / self.charging_time
         charging_cost = 0
         i = 0
-        while(energy_needed >= charging_per_hour):
-            energy_needed -= charging_per_hour
-            charging_cost += charging_per_hour * prices[i]
+        while(energy_needed >= self.charging_per_hour):
+            energy_needed -= self.charging_per_hour
+            charging_cost += self.charging_per_hour * prices[i]
             i += 1
 
         charging_cost += energy_needed  * prices[i]
