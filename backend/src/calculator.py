@@ -3,6 +3,7 @@ from battery_handler.battery_handler import Battery
 import matplotlib.pyplot as plt
 from algoritms import best_algos_ever
 import numpy as np
+from battery_handler.krzysiek_alg.krzysieg_alg import KAlg
 
 possible_cycles = 1500
 battery_price = 20000
@@ -75,12 +76,28 @@ if __name__ == "__main__":
     grid = np.array(grid_time)
 
     energy_needed = energy_usage_day_kWH.sum()
+    print(f"energy needed = {energy_needed}")
+
 
     print(f"benchmark cost dla korzystania z algosa mojego {benchmark(battery_time, grid_time, prices, energy_needed,battery_cost_per_kwh)}")
 
     basic = [(i, float(usage)) for i, usage in enumerate(energy_usage_day_kWH.flatten())]
     print(f"benchmark dla korzystania bezposrednio z grida = {benchmark([], basic, prices, energy_needed,battery_cost_per_kwh)}")
-   
 
+    ## drugi algos 
+    k_alg = KAlg(charging_time=battery.charging_time, 
+                 charging_per_hour=battery.charging_per_hour, 
+                 charge_level=0,
+                 battery_cost_per_kWh=battery_cost_per_kwh,
+                 b_max_capacity=battery.capacity)
     
+    charging_times, grid_times = k_alg.krzysiek_algorithm(prices, energy_usage_day_kWH)
+    
+    charge_sum = sum(j for _, j in charging_times)
+    print(f"charge sum = {charge_sum}")
+
+    bat2 = np.array(charging_times)
+    grid2 = np.array(grid_times)
+    
+    print(f"benchmark cost dla korzystania z algosa krzyska {benchmark(charging_times, grid_times, prices, energy_needed, battery_cost_per_kwh)}")
 

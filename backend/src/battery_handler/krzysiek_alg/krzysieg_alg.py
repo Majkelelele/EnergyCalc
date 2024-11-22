@@ -30,7 +30,8 @@ class KAlg:
                  charging_time: float,
                  charging_per_hour: float,
                  charge_level: float,
-                 kWh_battery_cost: float):
+                 battery_cost_per_kWh: float,
+                 b_max_capacity: int):
         """
         - charging_time: hours 
         - charging_per_hour: kW 
@@ -41,7 +42,8 @@ class KAlg:
         self.charging_time = charging_time
         self.charging_per_hour = charging_per_hour
         self.charge_level = charge_level
-        self.kwh_battery_cost = kWh_battery_cost
+        self.kwh_battery_cost = battery_cost_per_kWh
+        self.b_max_capacity = b_max_capacity
 
     def krzysiek_algorithm(self, 
                            prices: pd.DataFrame, 
@@ -55,8 +57,9 @@ class KAlg:
         if nbr_15min_periods_to_charge_battery >= len(prices):
             print("IMPLEMENT THIS CASE!!!!")
 
-        prices = prices["price"].to_list()
-        energy_usage = energy_usage["Energy_Usage_kWh"].to_list()
+        prices = [price[0] for price in prices]
+        energy_usage = [usage[0] for usage in energy_usage]
+
         consumption_cost_lst = [
             (idx , cons, cost) for idx, (cons, cost) in enumerate(zip(energy_usage, prices))
         ]
@@ -94,6 +97,8 @@ class KAlg:
                             b_charging_kw_per_15min: float) -> List:
         min_grid_cost = inf
         idx_of_min_grid_cost = 0
+        best_grid_charging_idxs = []
+        b_best_charging_amounts = []
         for sol_id, solution in enumerate(all_solutions):
             new_energy_in_b = 0
             needed_energy = 0
@@ -101,6 +106,8 @@ class KAlg:
             cost_without_battery = 0
             charge_time_idx = 0
             charge_time_period = solution[charge_time_idx][TIME_IDX]
+            grid_charging_idxs = []
+            b_charging_amounts = []
 
             for curr_time, consum, cost in consumption_cost_lst:
                 cost_without_battery += consum * cost
@@ -108,10 +115,23 @@ class KAlg:
                     # when we encounter charging period, since its one of the 
                     # cheapest periods we take energy from grid, thus total cost 
                     # we pay is for powering house and for powering battery
-                    all_grid_cost += (consum * cost  
-                                      + b_charging_kw_per_15min * cost 
-                                      + b_charging_kw_per_15min * self.kwh_battery_cost)
                     new_energy_in_b += b_charging_kw_per_15min
+
+                    if new_energy_in_b + self.charge_level > self.b_max_capacity:
+                        new_energy_in_b -= b_charging_kw_per_15min
+                        last_charge = self.b_max_capacity - new_energy_in_b - self.charge_level
+                        grid_charging_idxs.append((curr_time, consum + last_charge))
+                        new_energy_in_b += last_charge
+                        all_grid_cost += (consum * cost  
+                                        + last_charge * cost 
+                                        + last_charge * self.kwh_battery_cost)
+                        b_charging_amounts.append(last_charge)
+                    else:
+                        grid_charging_idxs.append((curr_time, consum + b_charging_kw_per_15min))
+                        all_grid_cost += (consum * cost  
+                                        + b_charging_kw_per_15min * cost 
+                                        + b_charging_kw_per_15min * self.kwh_battery_cost)
+                        b_charging_amounts.append(b_charging_kw_per_15min)
 
                     charge_time_idx += 1
                     if charge_time_idx < len(solution):
@@ -121,17 +141,28 @@ class KAlg:
                     needed_energy += consum
                     if self.charge_level + new_energy_in_b < needed_energy:
                         all_grid_cost += consum * cost
+                        grid_charging_idxs.append((curr_time, consum))
 
             print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl")
 
             if all_grid_cost < min_grid_cost:
                 min_grid_cost = all_grid_cost
                 idx_of_min_grid_cost = sol_id
+                best_grid_charging_idxs = grid_charging_idxs
+                b_best_charging_amounts = b_charging_amounts
+
         if cost_without_battery < min_grid_cost:
-            print("CHARING BATTERY IS NOT WORTH IT -_-")
-            return []
-        
-        return all_solutions[idx_of_min_grid_cost]
+            print("CHARGING BATTERY IS NOT WORTH IT -_-")
+            return [], [time for time, _, _ in consumption_cost_lst]
+
+        best_sol = [(time, charge_amount) 
+                        for charge_amount, (time, _, _) in 
+                        zip(b_best_charging_amounts, 
+                            all_solutions[idx_of_min_grid_cost])
+        ] 
+
+
+        return best_sol, best_grid_charging_idxs
 
     def __find_optimal_charging_hours(self,
                         consumption_cost_lst: List,
@@ -230,7 +261,6 @@ class KAlg:
         # we dont want to change the original data
         b_charging_times = list(alg_data.b_charging_times)
         charge_time_set = set(alg_data.charge_time_set)
-        print("Adjusting charging hours")
 
         while (new_energy_in_b + self.charge_level < needed_energy):
             # We calculate minimal battery charging cost on [0, curr_time] 
@@ -393,7 +423,7 @@ if __name__ == "__main__":
     # plt.savefig('obrazek.png')
 
     # Optimize battery usage
-    kalg = KAlg(charging_time=5, charging_per_hour=2, charge_level=0, kWh_battery_cost=0.266)
+    kalg = KAlg(charging_time=5, charging_per_hour=2, charge_level=0, battery_cost_per_kWh=0.266)
     solution = kalg.krzysiek_algorithm(prices, usage)
     # print(solution)
     # print("DONE")
