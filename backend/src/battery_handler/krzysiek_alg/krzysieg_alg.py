@@ -29,7 +29,8 @@ class KAlg:
     def __init__(self,
                  charging_time: float,
                  charging_per_hour: float,
-                 charge_level: float):
+                 charge_level: float,
+                 one_b_cycle_cost: float = 0.0387):
         """
         - charging_time: hours 
         - charging_per_hour: kW 
@@ -120,7 +121,7 @@ class KAlg:
                     if self.charge_level + new_energy_in_b < needed_energy:
                         all_grid_cost += consum * cost
 
-            print(f"Solution {sol_id} cost: {all_grid_cost} zl, cost without battery: {cost_without_battery} zl, minimal cost: {minimal_cost} zl")
+            print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl, minimal cost: {round(minimal_cost, 4)} zl")
 
             if all_grid_cost < min_grid_cost:
                 min_grid_cost = all_grid_cost
