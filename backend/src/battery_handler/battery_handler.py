@@ -1,4 +1,5 @@
 from battery_handler.consts import DEFAULT_VOLTAGE, DEFAULT_AMPERAGE
+
 import pandas as pd
 from math import ceil
 import numpy as np
@@ -12,6 +13,7 @@ class Battery:
             DoD: float, 
             efficiency: float,
             life_cycles: int,
+            charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
             full_cycles_done = 0,
@@ -20,6 +22,9 @@ class Battery:
         self.price = price
         # Battery capacity in kWh
         self.capacity = capacity
+
+        # Battery current charge level in kWh
+        self.charge_level = charge_level
 
         # Depth of Discharge (DoD) is the fraction of the battery that is
         # discharged relative to the overall capacity of the battery.
@@ -50,14 +55,20 @@ class Battery:
         # how many kwh can be charged per hour
         self.charging_per_hour = self.__calculate_charging_per_hour()
         
-    def __charging_time(self):
+    def __charging_time(self) -> float:
+        return ((self.capacity - self.charge_level) * self.DoD) \
+                / (self.socket_power_output * self.efficiency)
+
+    def __max_charging_time(self) -> float:
         return (self.capacity * self.DoD) \
                 / (self.socket_power_output * self.efficiency)
+
     
-    def __calculate_charging_per_hour(self):
-        return self.capacity / self.charging_time
+    def __calculate_charging_per_hour(self) -> float:
+        return self.capacity / self.__max_charging_time()
 
     def check_how_many_cycles_and_change_capacity(self):
+        # TODO - should be <=
         if self.life_cycles >= self.full_cycles_done:
             self.capacity = self.capacity * 0.8
             self.full_cycles_done = 0
