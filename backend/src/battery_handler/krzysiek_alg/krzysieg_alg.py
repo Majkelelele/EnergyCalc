@@ -30,15 +30,18 @@ class KAlg:
                  charging_time: float,
                  charging_per_hour: float,
                  charge_level: float,
-                 one_b_cycle_cost: float = 0.0387):
+                 kWh_battery_cost: float):
         """
         - charging_time: hours 
         - charging_per_hour: kW 
         - charge_level: kWh 
+        - kWh_battery_cost: zl - battery cost a lot of money thus we can 
+        estimate the cost of charging the battery for 1kW
         """
         self.charging_time = charging_time
         self.charging_per_hour = charging_per_hour
         self.charge_level = charge_level
+        self.kwh_battery_cost = kWh_battery_cost
 
     def krzysiek_algorithm(self, 
                            prices: pd.DataFrame, 
@@ -46,11 +49,10 @@ class KAlg:
         assert prices.shape == energy_usage.shape, "Prices and energy usage should have the same shape"
 
         nbr_15min_periods_to_charge_battery = ceil((self.charging_time * 60) / 15)
-        print(f"Number of 15min periods to charge battery: {nbr_15min_periods_to_charge_battery}, len(prices): {len(prices)}")
 
         # TODO - battery could be so huge that there are not enough intervals
         # to charge it
-        if nbr_15min_periods_to_charge_battery <= len(prices):
+        if nbr_15min_periods_to_charge_battery >= len(prices):
             print("IMPLEMENT THIS CASE!!!!")
 
         prices = prices["price"].to_list()
@@ -99,17 +101,16 @@ class KAlg:
             cost_without_battery = 0
             charge_time_idx = 0
             charge_time_period = solution[charge_time_idx][TIME_IDX]
-            minimal_cost = 0
 
             for curr_time, consum, cost in consumption_cost_lst:
                 cost_without_battery += consum * cost
-                minimal_cost += consum * 0.0387
                 if curr_time == charge_time_period:
                     # when we encounter charging period, since its one of the 
                     # cheapest periods we take energy from grid, thus total cost 
                     # we pay is for powering house and for powering battery
                     all_grid_cost += (consum * cost  
-                                      + b_charging_kw_per_15min * cost)
+                                      + b_charging_kw_per_15min * cost 
+                                      + b_charging_kw_per_15min * self.kwh_battery_cost)
                     new_energy_in_b += b_charging_kw_per_15min
 
                     charge_time_idx += 1
@@ -121,11 +122,14 @@ class KAlg:
                     if self.charge_level + new_energy_in_b < needed_energy:
                         all_grid_cost += consum * cost
 
-            print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl, minimal cost: {round(minimal_cost, 4)} zl")
+            print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl")
 
             if all_grid_cost < min_grid_cost:
                 min_grid_cost = all_grid_cost
                 idx_of_min_grid_cost = sol_id
+        if cost_without_battery < min_grid_cost:
+            print("CHARING BATTERY IS NOT WORTH IT -_-")
+            return []
         
         return all_solutions[idx_of_min_grid_cost]
 
@@ -365,31 +369,31 @@ if __name__ == "__main__":
     usage = pd.read_csv("./energy_usage.csv")
 
     # Create a time range for the X-axis
-    time_range = pd.date_range(start='00:00', periods=len(prices), freq='15T')
+    # time_range = pd.date_range(start='00:00', periods=len(prices), freq='15T')
 
-    # Plot the data
-    plt.figure(figsize=(12, 6))
-    plt.plot(time_range, prices["price"], label='Price (per kWh)', color='blue')
-    plt.plot(time_range, usage["Energy_Usage_kWh"], label='Energy Usage (kWh)', color='orange')
+    # # Plot the data
+    # plt.figure(figsize=(12, 6))
+    # plt.plot(time_range, prices["price"], label='Price (per kWh)', color='blue')
+    # plt.plot(time_range, usage["Energy_Usage_kWh"], label='Energy Usage (kWh)', color='orange')
 
-    # Formatting the plot
-    plt.xlabel('Time')
-    plt.ylabel('Value')
-    plt.title('Prices and Energy Usage Over Time')
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.grid(True)
+    # # Formatting the plot
+    # plt.xlabel('Time')
+    # plt.ylabel('Value')
+    # plt.title('Prices and Energy Usage Over Time')
+    # plt.xticks(rotation=45)
+    # plt.legend()
+    # plt.grid(True)
 
-    # Format the x-axis to show hours and minutes
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-    plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
+    # # Format the x-axis to show hours and minutes
+    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+    # plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
 
-    # Show the plot
-    plt.tight_layout()
-    plt.savefig('obrazek.png')
+    # # Show the plot
+    # plt.tight_layout()
+    # plt.savefig('obrazek.png')
 
     # Optimize battery usage
-    kalg = KAlg(charging_time=5.5, charging_per_hour=2, charge_level=0)
+    kalg = KAlg(charging_time=5, charging_per_hour=2, charge_level=0, kWh_battery_cost=0.266)
     solution = kalg.krzysiek_algorithm(prices, usage)
     # print(solution)
     # print("DONE")
