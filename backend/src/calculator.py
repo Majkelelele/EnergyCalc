@@ -1,6 +1,8 @@
 import pandas as pd
 from battery_handler.battery_handler import Battery
 import matplotlib.pyplot as plt
+from algoritms import best_algos_ever
+import numpy as np
 
 possible_cycles = 1500
 battery_price = 20000
@@ -15,12 +17,10 @@ expected_daily_energy_usage = expected_energy_usage_yearly_kWH / 365
 number_of_segments_daily = 24
 
 # import daily distribution of power use per hour
-expected_daily_energy_distribution = pd.read_csv("../data/distribution.csv").values
-
 solar_power_monthly = pd.read_csv("../data/SolarPower.csv")
 
 # calculate daily usage of power in kWH per hour
-hours_usage_day_kWH = expected_daily_energy_distribution * expected_daily_energy_usage
+energy_usage_day_kWH = pd.read_csv("../data/energy_usage.csv").values
 # fetching daily dynamic prices per hour per mWh
 prices = pd.read_csv("../data/prices.csv")
 # prices are in zl per MWh, we want them in zl per kWh
@@ -29,26 +29,37 @@ hours_cost_day_kWH = prices
 
 # calculating K from cost equation - see backend/docs/Zalacznik-nr-2-Algorytm-wyznaczania-ceny.pdf
 K_pge_kWH = 0.0812
-K_month = hours_usage_day_kWH.sum() * K_pge_kWH
+K_month = energy_usage_day_kWH.sum() * K_pge_kWH
 K_day = K_month/30
 
 # calculating A from cost equation
 A_mWH = 5
 A_kwH = 5 / 1000
-A_month = A_kwH * hours_usage_day_kWH.sum()
+A_month = A_kwH * energy_usage_day_kWH.sum()
 A_day = A_month/30
 
 def calc_energy_price_daily(solar_deduction):
-    cost_energy_alone = ((hours_usage_day_kWH - solar_deduction/number_of_segments_daily) * hours_cost_day_kWH).sum()
+    cost_energy_alone = ((energy_usage_day_kWH - solar_deduction/number_of_segments_daily) * hours_cost_day_kWH).sum()
     return cost_energy_alone + K_day + A_day
 
 def calc_brutto_price_daily(solar_deduction):
     return calc_energy_price_daily(solar_deduction) + trade_fee_per_day + additional_shit_idont_know
 
-
+# format of list [(index of period - 0:00 = 0, 0:15 = 1 ..., amount to be loaded in 15 minutes period in kwH)]
+def benchmark(battery_loading, grid_loading, prices, total, battery_cost_per_kwh):
+    usage_list = battery_loading + grid_loading
+    sum_of_js = sum(j for _, j in usage_list)
+    tolerance = 0.1
+    if abs(sum_of_js - total) > tolerance:
+        print("not fulffiled entire need")
+    total_cost = 0
+    for start, amount in usage_list:
+        cost = prices[start]
+        total_cost += cost * amount   
+    total_cost += sum(j for _,j in battery_loading)*battery_cost_per_kwh
+    return total_cost
 
 if __name__ == "__main__":
-    solar_power_output = solar_power_monthly.loc[solar_power_monthly["Month"] == current_month, "PowerOutput"].values[0]
 
     battery = Battery(
         price=16000, 
@@ -57,36 +68,19 @@ if __name__ == "__main__":
         efficiency=0.9, 
         life_cycles=6000
         )
-    print(f"profit if loading battery from grid and selling to grid when its more expensive : {round(battery.calc_deposit_profit(prices.copy()),3)}")
-    print(f"energy cost per day if using only grid = {round(calc_brutto_price_daily(0), 3)}zl")
-    print(f"energy cost per day if using only grid and solar panels = {round(calc_brutto_price_daily(solar_power_output), 3)}zl")
-    print(f"energy cost if using battery for autoconsumption = {round(battery.calc_battery_autonsumption_cost(prices,expected_daily_energy_usage),3)}")
-    print(f"energy cost if using battery for autoconsumption and using solar = {round(battery.calc_battery_autonsumption_cost(prices, expected_daily_energy_usage  - solar_power_output),3)}")
-
-    # Example inputs
-    # prices = np.random.uniform(0.1, 0.5, 96)  # Random energy prices for 96 slots
-    # usage = np.random.uniform(0, 2, 96)  # Random energy usage for 96 slots
-
-    # Optimize battery usage
-    # total_cost, battery_states, actions = optimize_battery(prices, hours_usage_day_kWH)
-
-    # # Print results
-    # print(f"Total Cost: {total_cost}")
-    # print(f"Battery States: {battery_states}")
-    # print(f"Actions: {actions}")
-    # plt.plot(np.arange(0, 24), prices, label="Energy Prices")
-    # plt.xlabel("Hour of Day")
-    # plt.ylabel("Price (arbitrary units)")
-    # plt.title("Energy Prices Over 24 Hours")
-    # plt.legend()
-    # plt.grid(True)
-    # # plt.show()
-    # # plt.savefig("plot.png")  # Save the plot to a file
-
-    # plt.plot(np.arange(0, 24), hours_usage_day_kWH, label="usage")
    
-    # # plt.show()
-    # plt.savefig("plot.png")  # Save the plot to a file
+    battery_cost_per_kwh = battery.one_kwh_cost()
+    battery_time, grid_time = best_algos_ever(prices,energy_usage_day_kWH,battery_cost_per_kwh,0.6)
+    bat = np.array(battery_time)
+    grid = np.array(grid_time)
+
+    energy_needed = energy_usage_day_kWH.sum()
+
+    print(f"benchmark cost dla korzystania z algosa mojego {benchmark(battery_time, grid_time, prices, energy_needed,battery_cost_per_kwh)}")
+
+    basic = [(i, float(usage)) for i, usage in enumerate(energy_usage_day_kWH.flatten())]
+    print(f"benchmark dla korzystania bezposrednio z grida = {benchmark([], basic, prices, energy_needed,battery_cost_per_kwh)}")
+   
 
     
 

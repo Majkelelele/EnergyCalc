@@ -45,6 +45,8 @@ class Battery:
 
         # The number of full cycles the battery has undergone.
         self.full_cycles_done = full_cycles_done
+
+        self.cost_per_cycle = self.price / self.life_cycles
         
     def __charging_time(self):
         return (self.capacity * self.DoD) \
@@ -57,7 +59,10 @@ class Battery:
             self.DoD = 0.8
 
     def one_cycle_cost(self):
-        return self.price / self.life_cycles
+        return  self.cost_per_cycle
+    
+    def one_kwh_cost(self):
+        return self.cost_per_cycle / self.capacity
 
     # TODO - add one big descriptive comment about what is happening here
     # prices - 24 ceny godzinowe
