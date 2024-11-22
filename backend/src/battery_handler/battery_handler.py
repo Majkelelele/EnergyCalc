@@ -14,7 +14,7 @@ class Battery:
             life_cycles: int,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
-            full_cycles_done = 0
+            full_cycles_done = 0,
             ):
         # Price of the battery
         self.price = price
@@ -47,10 +47,15 @@ class Battery:
         self.full_cycles_done = full_cycles_done
 
         self.cost_per_cycle = self.price / self.life_cycles
+        # how many kwh can be charged per hour
+        self.charging_per_hour = self.__calculate_charging_per_hour()
         
     def __charging_time(self):
         return (self.capacity * self.DoD) \
                 / (self.socket_power_output * self.efficiency)
+    
+    def __calculate_charging_per_hour(self):
+        return self.capacity / self.charging_time
 
     def check_how_many_cycles_and_change_capacity(self):
         if self.life_cycles >= self.full_cycles_done:
@@ -112,25 +117,23 @@ class Battery:
                                                 self.__calc_min_interval(prices)
         max_price_sum, max_interval_start, max_interval_end = \
                             self.__calc_max_interval(prices, min_interval_end)
-        
-        return max_price_sum - min_price_sum
+        return (max_price_sum - min_price_sum) * self.charging_per_hour
 
     def calc_deposit_profit(self, prices):
         prices_new = prices.flatten()
+        print(f"roznica = {self.efficient_charging_algorithm(prices_new)}")
         return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
     
     def calc_battery_autonsumption_cost(self, prices, energy_needed): 
         prices = prices.flatten()
-        charging_per_hour = self.capacity / self.charging_time
         charging_cost = 0
         i = 0
-        while(energy_needed >= charging_per_hour):
-            energy_needed -= charging_per_hour
-            charging_cost += charging_per_hour * prices[i]
+        while(energy_needed >= self.charging_per_hour):
+            energy_needed -= self.charging_per_hour
+            charging_cost += self.charging_per_hour * prices[i]
             i += 1
 
         charging_cost += energy_needed  * prices[i]
-
         
         return charging_cost + self.one_cycle_cost()
 
