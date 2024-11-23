@@ -97,8 +97,9 @@ class KAlg:
                             b_charging_kw_per_15min: float) -> List:
         min_grid_cost = inf
         idx_of_min_grid_cost = 0
-        best_grid_charging_idxs = []
-        b_best_charging_amounts = []
+        final_grid_charging_idxs = []
+        final_charging_amounts = []
+
         for sol_id, solution in enumerate(all_solutions):
             new_energy_in_b = 0
             needed_energy = 0
@@ -148,8 +149,8 @@ class KAlg:
             if all_grid_cost < min_grid_cost:
                 min_grid_cost = all_grid_cost
                 idx_of_min_grid_cost = sol_id
-                best_grid_charging_idxs = grid_charging_idxs
-                b_best_charging_amounts = b_charging_amounts
+                final_grid_charging_idxs = grid_charging_idxs
+                final_charging_amounts = b_charging_amounts
 
         if cost_without_battery < min_grid_cost:
             print("CHARGING BATTERY IS NOT WORTH IT -_-")
@@ -157,12 +158,12 @@ class KAlg:
 
         best_sol = [(time, charge_amount) 
                         for charge_amount, (time, _, _) in 
-                        zip(b_best_charging_amounts, 
+                        zip(final_charging_amounts, 
                             all_solutions[idx_of_min_grid_cost])
         ] 
 
 
-        return best_sol, best_grid_charging_idxs
+        return best_sol, final_grid_charging_idxs
 
     def __find_optimal_charging_hours(self,
                         consumption_cost_lst: List,
@@ -331,7 +332,6 @@ class KAlg:
                 break
             charge_time_idx += 1
         return charge_time_idx
-
 
     def __find_time_with_min_charge_cost(self,
                                         consump_cost_lst,
