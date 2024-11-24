@@ -9,14 +9,14 @@ def generate_energy_usage():
     base_usage = np.random.uniform(0.01, 0.1, num_periods)
 
     # Define peak periods (6-9 AM and 5-10 PM)
-    peak_periods = list(range(6 * 4, 8 * 4)) + list(range(18 * 4, 22 * 4))
+    peak_periods = list(range(6 * 4, 8 * 4)) + list(range(14 * 4, 22 * 4))
 
     # Increase energy usage during peak periods
     for i in peak_periods:
         base_usage[i] = np.random.uniform(0.2, 0.5)
 
     # Ensure the total usage does not exceed 8 kWh
-    total_usage = 8.5  # Total usage in kWh
+    total_usage = 7.5  # Total usage in kWh
     energy_usage = base_usage / base_usage.sum() * total_usage
 
     # Create a DataFrame
