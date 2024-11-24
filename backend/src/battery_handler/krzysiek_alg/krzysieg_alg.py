@@ -154,7 +154,10 @@ class KAlg:
 
         if cost_without_battery < min_grid_cost:
             print("CHARGING BATTERY IS NOT WORTH IT -_-")
+            self.charge_level = self.charge_level
             return [], [time for time, _, _ in consumption_cost_lst], cost_without_battery
+        else:
+            self.charge_level = self.b_max_capacity - needed_energy
 
         best_sol = [(time, charge_amount) 
                         for charge_amount, (time, _, _) in 

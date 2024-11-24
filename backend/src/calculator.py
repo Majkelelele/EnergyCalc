@@ -161,7 +161,7 @@ def krzysieg_alg():
                               battery_cost_per_kwh)
         all_from_grid_cost.append(grid_cost)
 
-        charge_level = battery.capacity - energy_needed
+        charge_level = k_alg.charge_level
 
     return all_energy_needed, all_from_grid_cost, all_from_alg_cost
 
