@@ -110,6 +110,8 @@ def michal_alg():
                               battery_cost_per_kwh)
         all_from_grid_cost.append(grid_cost)
         # print(f"benchmark dla korzystania bezposrednio z grida = {benchmark([], basic, prices, energy_needed,battery_cost_per_kwh)}")
+    
+    print(f"sum of cost only from grid = {sum(all_from_grid_cost)}, sum of cost from alg = {sum(all_from_alg_cost)}")
     return all_energy_needed, all_from_grid_cost, all_from_alg_cost
 
 def krzysieg_alg():
@@ -163,6 +165,8 @@ def krzysieg_alg():
 
         charge_level = k_alg.charge_level
 
+    print(f"sum of cost only from grid = {sum(all_from_grid_cost)}, sum of cost from alg = {sum(all_from_alg_cost)}")
+
     return all_energy_needed, all_from_grid_cost, all_from_alg_cost
 
 
@@ -189,7 +193,7 @@ def plot_results(all_energy_needed: List,
 
 if __name__ == "__main__":
 
-    all_energy_needed, all_from_grid_cost, all_from_alg_cost = krzysieg_alg()
+    all_energy_needed, all_from_grid_cost, all_from_alg_cost = michal_alg()
     plot_results(all_energy_needed, all_from_grid_cost, all_from_alg_cost)
 
     # battery = Battery(
