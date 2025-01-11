@@ -5,6 +5,8 @@ from algoritms import best_algos_ever
 import numpy as np
 from battery_handler.krzysiek_alg.krzysieg_alg import KAlg
 from typing import List
+import glob
+
 
 # possible_cycles = 1500
 # battery_price = 20000
@@ -48,18 +50,25 @@ from typing import List
 #     return calc_energy_price_daily(solar_deduction) + trade_fee_per_day + additional_shit_idont_know
 
 # format of list [(index of period - 0:00 = 0, 0:15 = 1 ..., amount to be loaded in 15 minutes period in kwH)]
+# note indexes only if loading amount greater than 0
+# total arguments means total energy needed in a given period
 def benchmark(battery_loading, grid_loading, prices, total, battery_cost_per_kwh):
     usage_list = battery_loading + grid_loading
     sum_of_js = sum(j for _, j in usage_list)
     tolerance = 0.1
-    if abs(sum_of_js - total) > tolerance:
+    if sum_of_js - total < -tolerance:
         print("not fulffiled entire need")
+    if sum_of_js - total > tolerance:
+        print(f"loading too much energy: energy needed {total}, energy loaded = {sum_of_js}")
     total_cost = 0
-    for start, amount in usage_list:
+    for start, amount in grid_loading:
         cost = prices[start]
         total_cost += cost * amount   
-    total_cost += sum(j for _,j in battery_loading)*battery_cost_per_kwh
-    return total_cost
+    for start, amount in battery_loading:
+        cost = prices[start]
+        total_cost += (cost + battery_cost_per_kwh) * amount
+
+    return float(total_cost[0])
 
 def michal_alg():
     battery = Battery(
@@ -192,9 +201,63 @@ def plot_results(all_energy_needed: List,
 
 
 if __name__ == "__main__":
+    
+    grants = []
 
-    all_energy_needed, all_from_grid_cost, all_from_alg_cost = michal_alg()
-    plot_results(all_energy_needed, all_from_grid_cost, all_from_alg_cost)
+    battery = Battery(
+        price=16000, 
+        capacity=10, 
+        DoD=0.95, 
+        efficiency=0.9, 
+        life_cycles=6000,
+        grant_reduction=8000
+        )
+   
+    battery_cost_per_kwh = battery.one_kwh_cost()
+
+    usage_pattern = "../data/energy_usage*.csv"
+    usage_files = glob.glob(usage_pattern)
+
+    prices_pattern = "../data/prices*.csv"
+    prices_files = glob.glob(prices_pattern)
+
+    # expected amount to be loaded in entire 15 min period
+    loading_per_segment = battery.charging_per_segment()
+
+    
+
+    for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
+        print(f"DAY {i}")
+        # converting to prices per kWh
+        prices = pd.read_csv(f_price).values / 1000 
+        usage = pd.read_csv(f_usage).values
+        total = usage.sum()
+        
+        basic_grid_time = [(i, float(usage)) for i, usage in 
+                    enumerate(usage.flatten())]
+        
+        print(f"total cost of stupid using only grid = {round(benchmark([],basic_grid_time,prices,total,battery_cost_per_kwh),3)}")
+
+        battery_time, grid_time = best_algos_ever(prices,usage,battery_cost_per_kwh,loading_per_segment)
+        print(f"total cost of best algos ever = {round(benchmark(battery_time,grid_time,prices,total,battery_cost_per_kwh),3)}")
+
+        k_alg = KAlg(charging_time=battery.charging_time, 
+                    charging_per_hour=battery.charging_per_hour, 
+                    charge_level=battery.charge_level,
+                    battery_cost_per_kWh=battery_cost_per_kwh,
+                    b_max_capacity=battery.capacity)
+
+        battery_time, grid_time, alg_cost = k_alg.krzysiek_algorithm(prices, usage)
+
+        print(f"total cost of krzysiek's algos = {round(alg_cost,3)}")
+
+        
+        
+        
+    # all_energy_needed_m, all_from_grid_cost_m, all_from_alg_cost_m = michal_alg()
+    # all_energy_needed_k, all_from_grid_cost_k, all_from_alg_cost_k = krzysieg_alg()
+
+    # plot_results(all_energy_needed, all_from_grid_cost, all_from_alg_cost)
 
     # battery = Battery(
     #     price=16000, 

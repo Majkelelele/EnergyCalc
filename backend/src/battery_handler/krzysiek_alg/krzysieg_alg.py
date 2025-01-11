@@ -54,8 +54,8 @@ class KAlg:
 
         # TODO - battery could be so huge that there are not enough intervals
         # to charge it
-        if nbr_15min_periods_to_charge_battery >= len(prices):
-            print("IMPLEMENT THIS CASE!!!!")
+        # if nbr_15min_periods_to_charge_battery >= len(prices):
+        #     print("IMPLEMENT THIS CASE!!!!")
 
         prices = [price[0] for price in prices]
         energy_usage = [usage[0] for usage in energy_usage]
@@ -144,7 +144,7 @@ class KAlg:
                         all_grid_cost += consum * cost
                         grid_charging_idxs.append((curr_time, consum))
 
-            print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl")
+            # print(f"Solution {sol_id} cost: {round(all_grid_cost, 4)} zl, cost without battery: {round(cost_without_battery, 4)} zl")
 
             if all_grid_cost < min_grid_cost:
                 min_grid_cost = all_grid_cost
@@ -153,7 +153,7 @@ class KAlg:
                 final_charging_amounts = b_charging_amounts
 
         if cost_without_battery < min_grid_cost:
-            print("CHARGING BATTERY IS NOT WORTH IT -_-")
+            # print("CHARGING BATTERY IS NOT WORTH IT -_-")
             self.charge_level = self.charge_level
             return [], [time for time, _, _ in consumption_cost_lst], cost_without_battery
         else:
@@ -280,8 +280,8 @@ class KAlg:
                                                 curr_time, 
                                                 b_charging_kw_per_15min)
             if found_time_min < 0:
-                print("Didnt find time, we need to take this energy from grid")
-                print("unexpected HIGH ENERGY consumption!!!")
+                # print("Didnt find time, we need to take this energy from grid")
+                # print("unexpected HIGH ENERGY consumption!!!")
                 # if something went wrong we always return original data
                 return False, alg_data
 
@@ -291,8 +291,8 @@ class KAlg:
                                                 curr_time, 
                                                 b_charging_kw_per_15min)
             if found_time_max < 0:
-                print("Didnt find time, we need to remove AFTER CURRENT TIME")
-                print("unexpected HIGH ENERGY consumption!!!")
+                # print("Didnt find time, we need to remove AFTER CURRENT TIME")
+                # print("unexpected HIGH ENERGY consumption!!!")
                 return False, alg_data
 
             # we need to update most recent time we charged battery

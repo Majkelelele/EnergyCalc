@@ -1,59 +1,60 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 import time
-import pandas as pd
+import csv
+import os
 
-# chrome_options = Options()
-# chrome_options.add_argument("--headless")  # Run in headless mode if you don't need a UI
-# chrome_options.add_argument("--no-sandbox")
-# chrome_options.add_argument("--disable-dev-shm-usage")
+options = Options()
+# options.add_argument("--headless")  # Run in headless mode
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
 
-service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-# driver = webdriver.Chrome(service=service, options=chrome_options)
-driver = webdriver.Chrome(service=service)
-
-url = 'https://www.gkpge.pl/dla-domu/oferta/dynamiczna-energia-z-pge'
-driver.get(url)
-
-time.sleep(5)
+url = "https://www.tge.pl/energia-elektryczna-rdn"
 
 try:
-    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="cookieAccept"]'))).click()
-    print("Cookies button clicked.")
-except Exception as e:
-    print(f"Error while clicking cookies button: {e}")
+    driver.get(url)
+    time.sleep(3)  
 
-try:
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="pane-table"]/div/div/ul')))
-
-    list_items = driver.find_elements(By.XPATH, '//*[@id="pane-table"]/div/div/ul/li')
-    print(f"Found {len(list_items)} list items.")
-    
-    time_price = []
-    for li in list_items[1:]:
-        date_time = li.find_element(By.XPATH, './/div[@class="date_time"]/div').text
-        price = float(li.find_element(By.XPATH, './/div[@class="price"]/div').text)
-        price_k = price / 1000
-        time_price.append((date_time, price))
+    base_xpath = '//*[@id="footable_kontrakty_godzinowe"]/tbody/tr[{}]/td[2]'
+    button_xpath = '/html/body/section[3]/div/div/div[1]/a[1]'
 
 
+    days = 30
+    for day in range(days):
+        i = 1
+        scraped_data = []
+        while True:
+            try:
+                current_xpath = base_xpath.format(i)
 
-    data = pd.DataFrame(time_price, columns = ["time", "price"])
-    data["price"].to_csv("../data/prices.csv", index=False)
-    
-    data.sort_values(by="price", inplace=True)
-    data.reset_index(drop=True, inplace=True)
-    print(data)
+                element = driver.find_element(By.XPATH, current_xpath)
 
-except Exception as e:
-    print(f"Error while extracting data from table: {e}")
+                scraped_data.append(element.text.replace(",","."))
+            except:
+                break
 
-time.sleep(3)
+            i += 1
 
-driver.quit()
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_folder = os.path.join(script_dir, "../data_months")
+        os.makedirs(output_folder, exist_ok=True)
+        csv_file_path = os.path.join(output_folder, f"day_{day}.csv")
+
+        with open(csv_file_path, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Data"])
+            for data in scraped_data:
+                for i  in range(4):
+                    writer.writerow([data])
+
+        button = driver.find_element(By.XPATH, button_xpath)
+        button.click()
+        time.sleep(5)
+
+finally:
+    driver.quit()

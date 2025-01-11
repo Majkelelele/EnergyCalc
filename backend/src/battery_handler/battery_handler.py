@@ -13,6 +13,7 @@ class Battery:
             DoD: float, 
             efficiency: float,
             life_cycles: int,
+            grant_reduction: float = 0.0,
             charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
@@ -22,6 +23,7 @@ class Battery:
         self.price = price
         # Battery capacity in kWh
         self.capacity = capacity
+        self.grant_reduction = grant_reduction
 
         # Battery current charge level in kWh
         self.charge_level = charge_level
@@ -51,9 +53,11 @@ class Battery:
         # The number of full cycles the battery has undergone.
         self.full_cycles_done = full_cycles_done
 
-        self.cost_per_cycle = self.price / self.life_cycles
+        self.cost_per_cycle = (self.price - self.grant_reduction)/ self.life_cycles
         # how many kwh can be charged per hour
         self.charging_per_hour = self.__calculate_charging_per_hour()
+
+        
         
     def __charging_time(self) -> float:
         return ((self.capacity - self.charge_level) * self.DoD) \
@@ -79,6 +83,9 @@ class Battery:
     
     def one_kwh_cost(self):
         return self.cost_per_cycle / self.capacity
+
+    def charging_per_segment(self):
+        return self.charging_per_hour / 4
 
     # TODO - add one big descriptive comment about what is happening here
     # prices - 24 ceny godzinowe
