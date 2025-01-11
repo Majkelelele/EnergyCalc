@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def generate_energy_usage():
+def generate_energy_usage(day):
     # Number of 15-minute periods in a day
     num_periods = 24 * 4
 
@@ -25,7 +25,7 @@ def generate_energy_usage():
     })
 
     # Save to CSV
-    df.to_csv('../data/energy_usage7.csv', index=False)
+    df.to_csv('../data/energy_usage8.csv', index=False)
 
     print("CSV file 'energy_usage.csv' has been created.")
 
@@ -42,4 +42,5 @@ def row_duplication():
 
     print(duplicated_prices_df)
 
-generate_energy_usage()
+for i in range(9, 32):
+    generate_energy_usage()

@@ -218,13 +218,15 @@ if __name__ == "__main__":
     usage_pattern = "../data/energy_usage*.csv"
     usage_files = glob.glob(usage_pattern)
 
-    prices_pattern = "../data/prices*.csv"
+    prices_pattern = "../data_months/day_*.csv"
     prices_files = glob.glob(prices_pattern)
 
     # expected amount to be loaded in entire 15 min period
     loading_per_segment = battery.charging_per_segment()
 
-    
+    results_only_grid = []
+    results_krzysiek = []
+    results_michal = []
 
     for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
         print(f"DAY {i}")
@@ -236,10 +238,14 @@ if __name__ == "__main__":
         basic_grid_time = [(i, float(usage)) for i, usage in 
                     enumerate(usage.flatten())]
         
-        print(f"total cost of stupid using only grid = {round(benchmark([],basic_grid_time,prices,total,battery_cost_per_kwh),3)}")
+        res = round(benchmark([],basic_grid_time,prices,total,battery_cost_per_kwh),3)
+        results_only_grid.append(res)
+        print(f"total cost of stupid using only grid = {res}")
 
         battery_time, grid_time = best_algos_ever(prices,usage,battery_cost_per_kwh,loading_per_segment)
-        print(f"total cost of best algos ever = {round(benchmark(battery_time,grid_time,prices,total,battery_cost_per_kwh),3)}")
+        res = round(benchmark(battery_time,grid_time,prices,total,battery_cost_per_kwh),3)
+        results_michal.append(res)
+        print(f"total cost of best algos ever = {res}")
 
         k_alg = KAlg(charging_time=battery.charging_time, 
                     charging_per_hour=battery.charging_per_hour, 
@@ -248,8 +254,9 @@ if __name__ == "__main__":
                     b_max_capacity=battery.capacity)
 
         battery_time, grid_time, alg_cost = k_alg.krzysiek_algorithm(prices, usage)
-
-        print(f"total cost of krzysiek's algos = {round(alg_cost,3)}")
+        res = round(alg_cost,3)
+        results_krzysiek.append(res)
+        print(f"total cost of krzysiek's algos = {res}")
 
         
         
