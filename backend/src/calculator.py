@@ -259,8 +259,6 @@ if __name__ == "__main__":
         print(f"total cost of krzysiek's algos = {res}")
 
         
-        
-        
     # all_energy_needed_m, all_from_grid_cost_m, all_from_alg_cost_m = michal_alg()
     # all_energy_needed_k, all_from_grid_cost_k, all_from_alg_cost_k = krzysieg_alg()
 
