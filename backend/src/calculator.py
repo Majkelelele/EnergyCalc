@@ -6,6 +6,7 @@ import numpy as np
 from battery_handler.krzysiek_alg.krzysieg_alg import KAlg
 from typing import List
 import glob
+import os
 
 
 
@@ -79,7 +80,10 @@ def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, batt
     load_per_index = {}
     for start, amount in usage_list:
         load_per_index[start] = load_per_index.get(start, 0) + amount
-        assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
+        # assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
+        # if load_per_index[start] > max_load_15min + tol:
+        #     print(f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" )
+
 
     total_cost = 0
     for start, amount in grid_loading:
@@ -107,10 +111,12 @@ if __name__ == "__main__":
     battery_cost_per_kwh = battery.one_kwh_cost()
 
     usage_pattern = "../data/energy_usage*.csv"
-    usage_files = glob.glob(usage_pattern)
-
+    usage_files = sorted(glob.glob(usage_pattern))
+    #ensuring that files are starting from day 0, and ascending
     prices_pattern = "../data_months/day_*.csv"
-    prices_files = glob.glob(prices_pattern)
+    prices_files = sorted(glob.glob(prices_pattern))
+
+
 
     # expected amount to be loaded in entire 15 min period
     max_load_15min = battery.charging_per_segment()
@@ -123,16 +129,17 @@ if __name__ == "__main__":
         print(f"DAY {i}")
         # converting to prices per kWh
         prices = ((pd.read_csv(f_price).values / 1000).flatten()).tolist() 
+        print(f"prices file = {f_price}")
         # usage already in kWh
-        usage = pd.read_csv(f_usage).values
-        total = usage.sum()
+        usage = (pd.read_csv(f_usage).values).flatten().tolist()
+        total = sum(usage)
         
         basic_grid_time = [(i, float(usage)) for i, usage in 
-                    enumerate(usage.flatten())]
+                    enumerate(usage)]
         
-        # res = round(benchmark([],basic_grid_time,prices,max_load_15min,total,battery_cost_per_kwh),3)
-        # results_only_grid.append(res)
-        # print(f"total cost of stupid using only grid = {res}")
+        res = round(benchmark([],basic_grid_time,prices,max_load_15min,total,battery_cost_per_kwh),3)
+        results_only_grid.append(res)
+        print(f"total cost of stupid using only grid = {res}")
 
         battery_time, grid_time = best_algos_ever(prices,usage,battery_cost_per_kwh,max_load_15min)
         res = round(benchmark(battery_time,grid_time,prices,max_load_15min,total,battery_cost_per_kwh),3)

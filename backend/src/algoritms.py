@@ -1,5 +1,3 @@
-from bisect import insort
-
 class Info():
     def __init__(self, remaining_energy, cost, start):
         self.remaining_energy  = remaining_energy
@@ -17,12 +15,14 @@ class Info():
         return self.start
 
 def best_algos_ever(prices, usages, battery_cost_per_kwh, loading_per_segment):
+
+    assert len(prices) == len(usages), "different lengths of prices and usages"
+    assert type(prices) == type(usages) == list, "prices or usages are not list"
     battery_cost_per_15min = battery_cost_per_kwh * loading_per_segment
     info_list = []
     battery_time = []
     grid_time = []
-    i = 0
-    for price, usage in zip(prices, usages):
+    for i, (price, usage) in enumerate(zip(prices, usages)):
         usage = float(usage)
         info_list.insert(0, Info(loading_per_segment,price + battery_cost_per_15min, i))
         info_list.sort()
