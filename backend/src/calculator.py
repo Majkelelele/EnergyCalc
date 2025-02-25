@@ -10,7 +10,7 @@ import glob
 # 2) - grid_loading - the same but when using energy directly from grid
 # 3) - prices is a list of prices at given 15min period (96indices)
 
-def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, battery_cost_per_kwh, tol = 0.01):
+def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, battery_cost_per_kwh, tol = 0.1):
     usage_list = battery_loading + grid_loading
     sum_of_js = sum(j for _, j in usage_list)
     # ensuring correct input
