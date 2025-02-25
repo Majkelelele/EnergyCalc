@@ -79,13 +79,13 @@ class Battery:
             self.DoD = 0.8
 
     def one_cycle_cost(self):
-        return  self.cost_per_cycle
+        return  round(self.cost_per_cycle,3)
     
     def one_kwh_cost(self):
-        return self.cost_per_cycle / self.capacity
+        return round(self.cost_per_cycle / self.capacity, 3)
 
     def charging_per_segment(self):
-        return self.charging_per_hour / 4
+        return round(self.charging_per_hour / 4, 3)
 
     # TODO - add one big descriptive comment about what is happening here
     # prices - 24 ceny godzinowe
