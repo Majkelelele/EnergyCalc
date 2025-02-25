@@ -43,7 +43,7 @@ try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_folder = os.path.join(script_dir, "../data_months")
         os.makedirs(output_folder, exist_ok=True)
-        csv_file_path = os.path.join(output_folder, f"day_{day}.csv")
+        csv_file_path = os.path.join(output_folder, f"day_{day:02d}.csv")
 
         with open(csv_file_path, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
