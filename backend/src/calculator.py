@@ -61,7 +61,6 @@ if __name__ == "__main__":
     max_load_15min = battery.charging_per_segment()
 
     results_only_grid = []
-    # results_krzysiek = []
     results_michal = []
 
     for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
