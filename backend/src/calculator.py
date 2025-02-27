@@ -60,7 +60,6 @@ def benchmark(battery_loading:list, grid_loading:list, prices:list, needed:list,
     return total_cost
 
 def total_profit(battery: Battery, do_print = False):
-    battery_cost_per_kwh = battery.one_kwh_cost()
 
     usage_pattern = "../data_months/usage*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
@@ -103,7 +102,7 @@ def total_profit(battery: Battery, do_print = False):
 
 if __name__ == "__main__":
 
-    # Mój Prą 6.0 - 50% grant
+    # Mój Prąd 6.0 - 50% grant
     # https://www.4sun.eu/strona-glowna/magazyn-energii-foxess-518-kwh-ep5-hv
     batteries = [
     Battery(
@@ -131,9 +130,11 @@ if __name__ == "__main__":
         grant_reduction=7175
     )
     ]
-    
-    print("\n".join(f"profit of {i} battery = {total_profit(battery)}, expected months to return = {battery.get_real_price() / total_profit(battery)}"
-                     for i, battery in enumerate(batteries)))
-    
-    
-   
+
+    for i, bat in enumerate(batteries):
+        profit = total_profit(bat)
+        avg_profit_month = profit / 2.0
+
+        print(
+            f"profit of {i} battery = {avg_profit_month}, expected months to return = {bat.get_real_price() / avg_profit_month}, "
+            f"expected month_life_cycles = {bat.get_expected_month_cycles()}")

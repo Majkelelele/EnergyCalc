@@ -12,6 +12,7 @@ class Battery:
             charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
+
             ):
         self.price = price
         self.capacity = capacity
@@ -41,10 +42,14 @@ class Battery:
         # is directly related to its lifespan. After this number of cycles,
         # the battery capacity will drop (for example to  80% of its original capacity).
         self.life_cycles = life_cycles
-
-        self.cost_per_cycle = (self.price - self.grant_reduction)/ self.life_cycles
+        
+        # adding life_cycles of reduced efficiency
+        self.cost_per_cycle = (self.price - self.grant_reduction)/ (self.life_cycles + 0.25 * self.life_cycles)
         # how many kwh can be charged per hour
         self.charging_per_hour = self.__calculate_charging_per_hour()
+
+    def get_expected_month_cycles(self):
+        return (self.life_cycles + 0.25 * self.life_cycles) / 30
 
     def get_real_price(self) -> float:
         return self.price - self.grant_reduction
