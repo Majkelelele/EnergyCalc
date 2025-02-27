@@ -32,7 +32,6 @@ def best_algos_ever(prices, usages, battery_cost_per_kwh, loading_per_segment):
     
     for i, (price, usage) in enumerate(zip(prices, usages)):
         usage = float(usage)
-        heapq.heappush(info_list, Info(loading_per_segment, price + battery_cost_per_15min, i))
         
         while info_list and info_list[0].get_cost() < price and usage > 0:
             curr_period = heapq.heappop(info_list)
@@ -48,6 +47,11 @@ def best_algos_ever(prices, usages, battery_cost_per_kwh, loading_per_segment):
                 usage = 0
         
         if usage > 0:
-            grid_time.append((i, usage))    
+            grid_time.append((i, usage)) 
+            if loading_per_segment - usage > 0:
+                heapq.heappush(info_list, Info(loading_per_segment - usage, price + battery_cost_per_15min, i))
+        else:
+            heapq.heappush(info_list, Info(loading_per_segment, price + battery_cost_per_15min, i))
+ 
 
     return battery_time, grid_time

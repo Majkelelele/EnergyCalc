@@ -10,7 +10,7 @@ import glob
 # 2) - grid_loading - the same but when using energy directly from grid
 # 3) - prices is a list of prices at given 15min period (96indices)
 
-def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, battery_cost_per_kwh, tol = 0.1):
+def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, battery_cost_per_kwh, tol = 0.01):
     usage_list = battery_loading + grid_loading
     sum_of_js = sum(j for _, j in usage_list)
     # ensuring correct input
@@ -68,12 +68,10 @@ if __name__ == "__main__":
         print(f"DAY {i}")
         # converting to prices per kWh
         prices = ((pd.read_csv(f_price).values / 1000).flatten()).tolist() 
-        print(f"prices file = {f_price}")
         # usage already in kWh
         usage = (pd.read_csv(f_usage).values).flatten().tolist()
-        # prices = [round(price, 3) for price in prices]
-        # usage = [round(u, 3) for u in usage]
-        total = round(sum(usage),3)
+
+        total = sum(usage)
         
         basic_grid_time = [(i, float(usage)) for i, usage in 
                     enumerate(usage)]
