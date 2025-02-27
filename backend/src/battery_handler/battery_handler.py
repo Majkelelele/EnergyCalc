@@ -1,11 +1,6 @@
 from battery_handler.consts import DEFAULT_VOLTAGE, DEFAULT_AMPERAGE
 
-import pandas as pd
-from math import ceil
-import numpy as np
-
 class Battery:
-    # TODO - add more description to used algorithms in Battery class 
     def __init__(
             self, 
             price: float,
@@ -17,11 +12,8 @@ class Battery:
             charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
-            full_cycles_done = 0,
             ):
-        # Price of the battery
         self.price = price
-        # Battery capacity in kWh
         self.capacity = capacity
         self.grant_reduction = grant_reduction
 
@@ -50,14 +42,12 @@ class Battery:
         # the battery capacity will drop (for example to  80% of its original capacity).
         self.life_cycles = life_cycles
 
-        # The number of full cycles the battery has undergone.
-        self.full_cycles_done = full_cycles_done
-
         self.cost_per_cycle = (self.price - self.grant_reduction)/ self.life_cycles
         # how many kwh can be charged per hour
         self.charging_per_hour = self.__calculate_charging_per_hour()
 
-        
+    def get_real_price(self) -> float:
+        return self.price - self.grant_reduction
         
     def __charging_time(self) -> float:
         return ((self.capacity - self.charge_level) * self.DoD) \
@@ -71,13 +61,6 @@ class Battery:
     def __calculate_charging_per_hour(self) -> float:
         return self.capacity / self.__max_charging_time()
 
-    def check_how_many_cycles_and_change_capacity(self):
-        # TODO - should be <=
-        if self.life_cycles >= self.full_cycles_done:
-            self.capacity = self.capacity * 0.8
-            self.full_cycles_done = 0
-            self.DoD = 0.8
-
     def one_cycle_cost(self):
         return  round(self.cost_per_cycle,3)
     
@@ -86,76 +69,3 @@ class Battery:
 
     def charging_per_segment(self):
         return round(self.charging_per_hour / 4, 3)
-
-    # TODO - add one big descriptive comment about what is happening here
-    # prices - 24 ceny godzinowe
-    # TODO add adjusting by DoD
-    def __calc_min_interval(self, prices: pd.DataFrame):
-        size = len(prices)
-        
-        
-        curr_sum = np.sum(prices[:ceil(self.charging_time)])
-        min_price_sum = curr_sum
-        curr_start = 0
-        final_start = 0
-        final_end = ceil(self.charging_time) - 1
-        for curr_hour in range(ceil(self.charging_time), size):
-            if curr_sum < min_price_sum:
-                min_price_sum = curr_sum
-                final_end = curr_hour - 1
-                final_start = curr_start
-
-            curr_sum -= prices[curr_start]
-            curr_sum += prices[curr_hour]
-            curr_start += 1
-        return min_price_sum, final_start, final_end
-    
-    def __calc_max_interval(self, prices: pd.DataFrame, min_end: int):
-        size = len(prices)
-        curr_start = min_end + 1
-        curr_sum = np.sum(prices[curr_start: curr_start + ceil(self.charging_time)])
-        max_price_sum = curr_sum
-        
-        final_start = curr_start
-        final_end =  curr_start + ceil(self.charging_time) - 1
-
-        for curr_hour in range(final_end + 1, size):
-            if curr_sum > max_price_sum:
-                max_price_sum = curr_sum
-                final_end = curr_hour - 1
-                final_start = curr_start
-
-            curr_sum -= prices[curr_start]
-            curr_sum += prices[curr_hour]
-            curr_start += 1
-        return max_price_sum, final_start, final_end
-    
-    def efficient_charging_algorithm(self, prices: pd.DataFrame):
-        min_price_sum, min_interval_start, min_interval_end = \
-                                                self.__calc_min_interval(prices)
-        max_price_sum, max_interval_start, max_interval_end = \
-                            self.__calc_max_interval(prices, min_interval_end)
-        return (max_price_sum - min_price_sum) * self.charging_per_hour
-
-    def calc_deposit_profit(self, prices):
-        prices_new = prices.flatten()
-        print(f"roznica = {self.efficient_charging_algorithm(prices_new)}")
-        return self.efficient_charging_algorithm(prices_new) - self.one_cycle_cost()
-    
-    def calc_battery_autonsumption_cost(self, prices, energy_needed): 
-        prices = prices.flatten()
-        charging_cost = 0
-        i = 0
-        while(energy_needed >= self.charging_per_hour):
-            energy_needed -= self.charging_per_hour
-            charging_cost += self.charging_per_hour * prices[i]
-            i += 1
-
-        charging_cost += energy_needed  * prices[i]
-        
-        return charging_cost + self.one_cycle_cost()
-
-
-if __name__ == '__main__':
-    battery = Battery(capacity=10, DoD=0.95, efficiency=0.9, life_cycles=1000)
-    print(f"{round(battery.charging_time, 2)}h")
