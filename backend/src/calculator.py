@@ -19,9 +19,9 @@ def benchmark(battery_loading, grid_loading, prices, max_load_15min, total, batt
     load_per_index = {}
     for start, amount in usage_list:
         load_per_index[start] = load_per_index.get(start, 0) + amount
-        # assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
-        if load_per_index[start] > max_load_15min + tol:
-            print(f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" )
+        assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
+        # if load_per_index[start] > max_load_15min + tol:
+            # print(f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" )
 
 
     total_cost = 0
@@ -49,7 +49,7 @@ if __name__ == "__main__":
    
     battery_cost_per_kwh = battery.one_kwh_cost()
 
-    usage_pattern = "../data/energy_usage*.csv"
+    usage_pattern = "../data_months/usage*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
     #ensuring that files are starting from day 0, and ascending
     prices_pattern = "../data_months/day_*.csv"

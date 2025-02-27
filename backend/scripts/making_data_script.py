@@ -25,22 +25,8 @@ def generate_energy_usage(day):
     })
 
     # Save to CSV
-    df.to_csv('../data/energy_usage8.csv', index=False)
+    df.to_csv(f"../data_months/usage_{day:02d}.csv", index=False)
+    
 
-    print("CSV file 'energy_usage.csv' has been created.")
-
-def row_duplication():
-    file_path = '../data/prices7.csv'
-    # Read the CSV file into a DataFrame
-    prices_df = pd.read_csv(file_path)
-
-    # Duplicate the rows
-    duplicated_prices_df = prices_df.loc[prices_df.index.repeat(4)].reset_index(drop=True)
-
-    # Save the modified DataFrame back to a CSV file (optional)
-    duplicated_prices_df.to_csv(file_path, index=False)
-
-    print(duplicated_prices_df)
-
-for i in range(9, 32):
-    generate_energy_usage()
+for i in range(30):
+    generate_energy_usage(i)
