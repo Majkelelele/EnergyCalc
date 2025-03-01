@@ -28,5 +28,5 @@ def generate_energy_usage(day):
     df.to_csv(f"../data_months/usage_{day:02d}.csv", index=False)
     
 
-for i in range(30):
+for i in range(200):
     generate_energy_usage(i)

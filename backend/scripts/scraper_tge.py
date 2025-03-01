@@ -34,7 +34,7 @@ try:
 
                 element = driver.find_element(By.XPATH, current_xpath)
 
-                scraped_data.append(element.text.replace(",","."))
+                scraped_data.append(float(element.text.replace(",", ".")) / 1000)
             except:
                 break
 
