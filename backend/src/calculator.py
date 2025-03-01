@@ -64,18 +64,17 @@ def total_profit(battery: Battery, do_print = False):
     usage_pattern = "../data_months/usage*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
     #ensuring that files are starting from day 0, and ascending
-    prices_pattern = "../data_months/day_*.csv"
+    prices_pattern = "../data_months/enea*.csv"
     prices_files = sorted(glob.glob(prices_pattern))
     # expected amount to be loaded in entire 15 min period
 
     results_only_grid = []
     results_michal = []
-
     for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
         if do_print:
             print(f"DAY {i}")
-        # converting to prices per kWh
-        prices = ((pd.read_csv(f_price).values / 1000).flatten()).tolist() 
+        # prices per kWh
+        prices = ((pd.read_csv(f_price).values).flatten()).tolist() 
         # usage already in kWh
         usage = (pd.read_csv(f_usage).values).flatten().tolist()
         
@@ -96,7 +95,7 @@ def total_profit(battery: Battery, do_print = False):
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in michal's algo are smaller than in stupid algo"
 
-    return sum(m - g for m, g in zip(results_only_grid, results_michal))
+    return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
 
 
 
@@ -128,13 +127,20 @@ if __name__ == "__main__":
         efficiency=0.95, 
         life_cycles=4000,
         grant_reduction=7175
+    ),
+    Battery(
+        price=14350, 
+        capacity=10.36, 
+        DoD=0.9, 
+        efficiency=0.95, 
+        life_cycles=4000,
+        grant_reduction=0.0
     )
     ]
 
     for i, bat in enumerate(batteries):
-        profit = total_profit(bat)
-        avg_profit_month = profit / 2.0
-
+        profit, months = total_profit(bat)
+        avg_profit_month = profit / months
         print(
-            f"profit of {i} battery = {avg_profit_month}, expected months to return = {bat.get_real_price() / avg_profit_month}, "
+            f"average profit of {i} battery per month = {avg_profit_month}, expected months to return = {bat.get_real_price() / avg_profit_month}, "
             f"expected month_life_cycles = {bat.get_expected_month_cycles()}")
