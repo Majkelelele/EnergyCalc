@@ -43,7 +43,8 @@ class SolarPanel:
                 f"Location: ({self.latitude}, {self.longitude})")
 
 
-def save_solar_data(latitude = 52.20672318295605, longitude = 20.977651716685703, date:str = '2023-03-01'):
+def save_solar_data(latitude = 52.20672318295605, longitude = 20.977651716685703,
+                    date:str = '2023-03-01', path:str = "../../data_months/"):
     
     location = Location(latitude=latitude, longitude=longitude, tz="Europe/Berlin", altitude=112)
 # specifications
@@ -67,7 +68,6 @@ def save_solar_data(latitude = 52.20672318295605, longitude = 20.977651716685703
     ac_power = abs(round(modelchain.results.ac / 1000, 3))
     ac_power_march = ac_power[date].values / 4
     ac_power_march = np.repeat(ac_power_march, 4)
-    pd.DataFrame(ac_power_march).to_csv(f"../../data_months/ac_power_15min_{date}.csv", index=False)
+    pd.DataFrame(ac_power_march).to_csv(path + f"ac_power_15min_{date}.csv", index=False)
 
-
-save_solar_data(date = "2023-08-01")
+# save_solar_data(date = "2023-08-01")
