@@ -3,8 +3,6 @@ from battery_handler.battery_handler import Battery
 from algoritms import best_algos_ever
 import glob
 
-
-
 def is_overloaded(battery_loading, usage, total_capacity):
     battery = 0  # Initial battery level
     timeline = [0] * 96  # 96 time slots for the day
@@ -91,19 +89,11 @@ def total_profit(battery: Battery, do_print = False):
         results_michal.append(res)
         if do_print:
             print(f"total cost of best algos ever = {res}")
-
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
-
-    
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
 
-
-
-if __name__ == "__main__":
-
-    # Mój Prąd 6.0 - 50% grant
-    # https://www.4sun.eu/strona-glowna/magazyn-energii-foxess-518-kwh-ep5-hv
+def simulate():
     batteries = [
     Battery(
         price=8000, 
@@ -141,7 +131,15 @@ if __name__ == "__main__":
 
     for i, bat in enumerate(batteries):
         profit, months = total_profit(bat)
-        avg_profit_month = profit / months
+        avg_profit_month = round(profit / months,2)
+        expected_months_to_return = round(bat.get_real_price() / avg_profit_month,2)
+        expected_months_cycles = round(bat.get_expected_month_cycles(),2)
         print(
-            f"average profit of {i} battery per month = {avg_profit_month}, expected months to return = {bat.get_real_price() / avg_profit_month}, "
-            f"expected month_life_cycles = {bat.get_expected_month_cycles()}")
+            f"average profit of {i} battery per month = {avg_profit_month}, expected months to return = {expected_months_to_return}, "
+            f"expected month_life_cycles = {expected_months_cycles}")
+
+
+if __name__ == "__main__":
+    # Mój Prąd 6.0 - 50% grant
+    # https://www.4sun.eu/strona-glowna/magazyn-energii-foxess-518-kwh-ep5-hv
+    simulate()
