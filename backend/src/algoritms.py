@@ -57,13 +57,13 @@ def best_algos_ever(prices, usages, battery:Battery):
             grid_time.append((i, usage)) 
             if loading_per_segment - usage > 0 and battery_load_curr < battery_cap:
                 to_load = min(loading_per_segment - usage, battery_cap - battery_load_curr)
-                heapq.heappush(info_list, Info(to_load, to_load / loading_per_segment * battery_cost_per_15min + price, i))
+                heapq.heappush(info_list, Info(to_load, battery_cost_per_kwh + price, i))
                 battery_load_curr += to_load
 
         else:
             to_load = min(loading_per_segment, battery_cap - battery_load_curr)
             battery_load_curr += to_load
-            heapq.heappush(info_list, Info(to_load, price + battery_cost_per_15min, i))
+            heapq.heappush(info_list, Info(to_load, price + battery_cost_per_kwh, i))
  
 
     return battery_time, grid_time

@@ -48,14 +48,14 @@ def benchmark(battery_loading:list, grid_loading:list, prices:list, needed:list,
         load_per_index[start] = load_per_index.get(start, 0) + amount
         assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
 
-
+    cost_per_kwh = battery.one_kwh_cost()
     total_cost = 0
     for start, amount in grid_loading:
         cost = prices[start]
         total_cost += cost * amount   
     for start, amount in battery_loading:
         cost = prices[start]
-        total_cost += cost * amount
+        total_cost += (cost + cost_per_kwh) * amount
 
     return total_cost
 
@@ -93,8 +93,9 @@ def total_profit(battery: Battery, do_print = False):
             print(f"total cost of best algos ever = {res}")
 
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
-    assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in michal's algo are smaller than in stupid algo"
+    assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
 
+    
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
 
 
