@@ -5,10 +5,8 @@ from pvlib.pvsystem import PVSystem
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import pandas as pd
 import matplotlib.pyplot as plt
-from backend.src.solar.get_weather_data import get_irradiation_data
+from solar.get_weather_data import get_irradiation_data
 import numpy as np
-
-
 
 class SolarPanel:
     def __init__(self, efficiency, area, sunlight_hours, latitude, longitude):
