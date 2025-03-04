@@ -1,5 +1,5 @@
 from solar.solar_cell import SolarPanel
-from scripts.making_data_script import generate_energy_usage_200days
+from backend.scripts.making_data_script import generate_energy_usage_200days
 
 def api_call(daily_usage:float, company:str, grant_applicable:bool, solar:SolarPanel):
     

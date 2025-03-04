@@ -1,2 +1,4 @@
 *venv*
 backend/scripts/google-chrome.deb
+__pycache__
+*-info

@@ -8,4 +8,4 @@ version = "1.0.0"
 description = "Description"
 
 [tools.setuptools.packages.find]
-where = ["src"]
+where = ["backend"]
