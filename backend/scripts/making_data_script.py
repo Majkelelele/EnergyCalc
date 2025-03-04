@@ -29,3 +29,5 @@ def generate_energy_usage(day, total_usage=7.5):
 def generate_energy_usage_200days(total_usage=7.5):
     for i in range(200):
         generate_energy_usage(i, total_usage=total_usage)
+        
+generate_energy_usage_200days(7.5)
