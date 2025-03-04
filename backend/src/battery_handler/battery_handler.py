@@ -8,7 +8,7 @@ class Battery:
             DoD: float, 
             efficiency: float,
             life_cycles: int,
-            grant_reduction: float = 0.0,
+            grant_reduction: bool = False,
             charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
@@ -16,7 +16,7 @@ class Battery:
             ):
         self.price = price
         self.capacity = capacity
-        self.grant_reduction = grant_reduction
+        self.grant_reduction = self.price * 0.5 if grant_reduction else 0
 
         # Battery current charge level in kWh
         self.charge_level = charge_level

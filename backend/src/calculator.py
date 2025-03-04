@@ -93,7 +93,7 @@ def total_profit(battery: Battery, do_print = False):
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
 
-def simulate():
+def simulate(do_print = False, grant=False):
     batteries = [
     Battery(
         price=8000, 
@@ -101,7 +101,7 @@ def simulate():
         DoD=0.95, 
         efficiency=0.98, 
         life_cycles=4000,
-        grant_reduction=4000
+        grant_reduction=grant
     ),
     Battery(
         price=4800, 
@@ -109,7 +109,7 @@ def simulate():
         DoD=0.9, 
         efficiency=0.95, 
         life_cycles=6000,
-        grant_reduction=2400
+        grant_reduction=grant
     ),
     Battery(
         price=14350, 
@@ -117,7 +117,7 @@ def simulate():
         DoD=0.9, 
         efficiency=0.95, 
         life_cycles=4000,
-        grant_reduction=7175
+        grant_reduction=grant
     ),
     Battery(
         price=14350, 
@@ -125,21 +125,26 @@ def simulate():
         DoD=0.9, 
         efficiency=0.95, 
         life_cycles=4000,
-        grant_reduction=0.0
+        grant_reduction=grant
     )
     ]
-
+    avg_profits = []
+    expected_months_to_returns = []
+    expected_months_res = []
     for i, bat in enumerate(batteries):
         profit, months = total_profit(bat)
         avg_profit_month = round(profit / months,2)
         expected_months_to_return = round(bat.get_real_price() / avg_profit_month,2)
         expected_months_cycles = round(bat.get_expected_month_cycles(),2)
-        print(
-            f"average profit of {i} battery per month = {avg_profit_month}, expected months to return = {expected_months_to_return}, "
-            f"expected month_life_cycles = {expected_months_cycles}")
-
+        avg_profits.append(avg_profit_month)
+        expected_months_to_returns.append(expected_months_to_return)
+        expected_months_res.append(expected_months_cycles)
+        if do_print:
+            print(
+                f"average profit of {i} battery per month = {avg_profit_month}, expected months to return = {expected_months_to_return}, "
+                f"expected month_life_cycles = {expected_months_cycles}")
+    return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    # Mój Prąd 6.0 - 50% grant
-    # https://www.4sun.eu/strona-glowna/magazyn-energii-foxess-518-kwh-ep5-hv
-    simulate()
+
+    simulate(do_print=True, grant=False)
