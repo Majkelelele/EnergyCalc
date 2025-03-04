@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def generate_energy_usage(day):
+def generate_energy_usage(day, total_usage=7.5):
     # Number of 15-minute periods in a day
     num_periods = 24 * 4
 
@@ -16,7 +16,6 @@ def generate_energy_usage(day):
         base_usage[i] = np.random.uniform(0.2, 0.5)
 
     # Ensure the total usage does not exceed 8 kWh
-    total_usage = 7.5  # Total usage in kWh
     energy_usage = base_usage / base_usage.sum() * total_usage
 
     # Create a DataFrame
@@ -27,6 +26,6 @@ def generate_energy_usage(day):
     # Save to CSV
     df.to_csv(f"../data_months/usage_{day:02d}.csv", index=False)
     
-
-for i in range(200):
-    generate_energy_usage(i)
+def generate_energy_usage_200days(total_usage=7.5):
+    for i in range(200):
+        generate_energy_usage(i, total_usage=total_usage)
