@@ -146,5 +146,4 @@ def simulate(do_print = False, grant=False):
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-
     simulate(do_print=True, grant=False)

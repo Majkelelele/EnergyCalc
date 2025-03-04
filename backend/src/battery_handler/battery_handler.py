@@ -55,8 +55,8 @@ class Battery:
         return self.price - self.grant_reduction
         
     def __charging_time(self) -> float:
-        return ((self.capacity - self.charge_level) * self.DoD) \
-                / (self.socket_power_output * self.efficiency)
+        return round(((self.capacity - self.charge_level) * self.DoD) \
+                / (self.socket_power_output * self.efficiency),3)
 
     def __max_charging_time(self) -> float:
         return (self.capacity * self.DoD) \
@@ -64,7 +64,7 @@ class Battery:
 
     
     def __calculate_charging_per_hour(self) -> float:
-        return self.capacity / self.__max_charging_time()
+        return round(self.capacity / self.__max_charging_time(),3)
 
     def one_cycle_cost(self):
         return  round(self.cost_per_cycle,3)
