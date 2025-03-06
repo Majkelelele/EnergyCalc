@@ -4,6 +4,8 @@ from algoritms import best_algos_ever
 import glob
 import numpy as np
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
+from backend.scripts.making_data_script import generate_energy_usage_200days
+
 
 ARR = NDArray[np.float32]
 
@@ -63,7 +65,7 @@ def benchmark(
 
     return total_cost
 
-def total_profit(battery: Battery, do_print = False):
+def total_profit(battery: Battery):
 
     usage_pattern = "../data_months/usage*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
@@ -93,7 +95,8 @@ def total_profit(battery: Battery, do_print = False):
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
 
-def simulate(do_print = False, grant=False):
+def simulate(do_print = False, grant=False, daily_usage=7.5):
+    generate_energy_usage_200days(total_usage=daily_usage)
     batteries = [
     Battery(
         price=8000, 
@@ -146,4 +149,4 @@ def simulate(do_print = False, grant=False):
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True)
+    simulate(do_print=True, grant=True, daily_usage=200000)

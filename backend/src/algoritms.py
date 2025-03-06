@@ -73,14 +73,12 @@ def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
         
         if usage > 0:
             grid_time[i] += usage
-            if (loading_per_segment - usage) > 0 and battery_load_curr < battery_cap:
-                to_load = min(loading_per_segment - usage, battery_cap - battery_load_curr)
-                heapq.heappush(info_list, Info(to_load, battery_cost_per_kwh + price, i))
-                battery_load_curr += to_load
-        else:
+            
+        if  battery_load_curr < battery_cap:
             to_load = min(loading_per_segment, battery_cap - battery_load_curr)
+            heapq.heappush(info_list, Info(to_load, battery_cost_per_kwh + price, i))
             battery_load_curr += to_load
-            heapq.heappush(info_list, Info(to_load, price + battery_cost_per_kwh, i))
+        
         
         buy_time, sell_time = load_only_to_sell(battery_time, prices, battery)
 

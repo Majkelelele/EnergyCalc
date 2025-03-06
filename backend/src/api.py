@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from solar.solar_cell import SolarPanel
-from backend.scripts.making_data_script import generate_energy_usage_200days
 from calculator import simulate
 
 app = FastAPI()
@@ -23,7 +22,6 @@ class EnergyRequest(BaseModel):
 
 @app.post("/api/calculate")
 def api_call(request: EnergyRequest):
-    generate_energy_usage_200days(total_usage=request.daily_usage)
     batteries, avg_profits, expected_months_to_returns, expected_months_cycles = simulate(
         do_print=False, grant=request.grant_applicable
     )
