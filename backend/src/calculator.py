@@ -2,18 +2,20 @@ import pandas as pd
 from battery_handler.battery_handler import Battery
 from algoritms import best_algos_ever
 import glob
+import numpy as np
+from numpy.typing import NDArray  # Available in NumPy 1.20 and later
 
-def is_overloaded(battery_loading, usage, total_capacity):
+ARR = NDArray[np.float32]
+
+def is_overloaded(battery_loading:ARR, usage:ARR, buy:ARR, sell:ARR, total_capacity:float):
     battery = 0  # Initial battery level
-    timeline = [0] * 96  # 96 time slots for the day
     
     # Apply battery loading events
-    for i, load in battery_loading:
-        timeline[i] += load
-    
+    # timeline += buy
+    # timeline -= sell
     # Simulate battery level over time
     for i in range(96):
-        battery += timeline[i] 
+        battery += battery_loading[i]
         battery -= usage[i]  
         
         if battery > total_capacity:
@@ -28,32 +30,36 @@ def is_overloaded(battery_loading, usage, total_capacity):
 # 2) - grid_loading - the same but when using energy directly from grid
 # 3) - prices is a list of prices at given 15min period (96indices)
 
-def benchmark(battery_loading:list, grid_loading:list, prices:list, needed:list, battery:Battery, tol = 0.01):
-    usage_list = battery_loading + grid_loading
-    sum_of_js = sum(j for _, j in usage_list)
+def benchmark(
+    battery_loading: ARR, 
+    grid_loading: ARR, 
+    buy: ARR, 
+    sell: ARR,
+    prices: ARR, 
+    usage: ARR, 
+    battery: Battery, 
+    tol: float = 0.01
+):
+
+    energy_provided = battery_loading.sum() + grid_loading.sum()
     max_load_15min = battery.charging_per_segment()
     total_cap = battery.capacity
-    total = sum(needed)
+    total = sum(usage)
     # ensuring correct input
-    assert not (total - sum_of_js  > tol), "Not fulfilled entire need"
-    assert not (sum_of_js - total > tol), f"loading too much energy: energy needed {total}, energy loaded = {sum_of_js}"
-    # assert sum(j for _, j in battery_loading) <= total_cap, f"loaded more to battery than total cap"
-    if is_overloaded(battery_loading,needed,total_cap):
-        print(f"loaded {sum(j for _, j in battery_loading)} battery and total cap = {total_cap}")
+    assert not (total - energy_provided  > tol), "Not fulfilled entire need"
+    assert not (energy_provided - total > tol), f"loading too much energy: energy needed {total}, energy loaded = {energy_provided}"
+    assert not is_overloaded(battery_loading, usage, buy, sell, total_cap), "Battery overloaded"
 
-    load_per_index = {}
-    for start, amount in battery_loading:
-        load_per_index[start] = load_per_index.get(start, 0) + amount
-        assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
-
+    load_per_index = np.zeros(96)
+    load_per_index += battery_loading
+    # load_per_index += buy
+    assert np.all(load_per_index <= max_load_15min + tol), f"Some values exceeded max load of {max_load_15min + tol}"
+        
     cost_per_kwh = battery.one_kwh_cost()
     total_cost = 0
-    for start, amount in grid_loading:
-        cost = prices[start]
-        total_cost += cost * amount   
-    for start, amount in battery_loading:
-        cost = prices[start]
-        total_cost += (cost + cost_per_kwh) * amount
+    total_cost += (grid_loading * prices).sum()
+    total_cost += (battery_loading * (prices + cost_per_kwh)).sum()
+    
 
     return total_cost
 
@@ -69,26 +75,20 @@ def total_profit(battery: Battery, do_print = False):
     results_only_grid = []
     results_michal = []
     for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
-        if do_print:
-            print(f"DAY {i}")
-        # prices per kWh
-        prices = ((pd.read_csv(f_price).values).flatten()).tolist() 
-        # usage already in kWh
-        usage = (pd.read_csv(f_usage).values).flatten().tolist()
-        
-        basic_grid_time = [(i, float(usage)) for i, usage in 
-                    enumerate(usage)]
-        
-        res = round(benchmark([],basic_grid_time,prices,usage, battery),3)
-        results_only_grid.append(res)
-        if do_print:
-            print(f"total cost of stupid using only grid = {res}")
 
-        battery_time, grid_time = best_algos_ever(prices,usage,battery)
-        res = round(benchmark(battery_time,grid_time,prices, usage, battery),3)
+        # prices per kWh
+        prices = np.array((pd.read_csv(f_price).values).flatten())
+        # usage already in kWh
+        usage = np.array((pd.read_csv(f_usage).values).flatten())
+        
+        res = round(benchmark(np.zeros(96),usage,np.zeros(96), np.zeros(96), prices,usage, battery),3)
+        results_only_grid.append(res)
+
+
+        battery_time, grid_time, buy, sell = best_algos_ever(prices,usage,battery)
+        res = round(benchmark(battery_time,grid_time,buy, sell, prices, usage, battery),3)
         results_michal.append(res)
-        if do_print:
-            print(f"total cost of best algos ever = {res}")
+
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30

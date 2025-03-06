@@ -9,6 +9,8 @@ class Info:
         self.start = start
 
     def __lt__(self, other):
+        if(self.cost == other.get_cost()):
+            return self.start < other.start
         return self.cost < other.get_cost()
 
     def get_cost(self):
@@ -23,41 +25,36 @@ class Info:
     def get_start(self):
         return self.start
 
-def load_only_to_sell(battery_time, grid_time, battery:Battery):
-    free_load = np.full(96, battery.charging_per_segment())
-    cost_kw = battery.one_kwh_cost()
-    load = []
-    sell = []
+def load_only_to_sell(battery_time: list, prices: list, battery: Battery):
+#     free_load = np.full(96, battery.charging_per_segment(), dtype=float)
+#     free_load -= battery_time
+#     cost_kw = battery.one_kwh_cost()
+#     heap = []
+    buy_time = np.zeros(96)
+    sell_time = np.zeros(96)
+
+#     # Load battery to full
     
-    # checking how much of possible load per segment left
-    for start, amount in battery_time:
-        free_load[start] -= amount
-    for start, amount in grid_time:
-        free_load[start] -= amount
-    # loading only to sell
-    # for i, amount in reversed(list(enumerate(free_load))):
-        
-        
-        
-    return load, sell
 
-def load_to_use():
-    pass   
+    return buy_time, sell_time
 
-def best_algos_ever(prices, usages, battery:Battery):
-    assert len(prices) == len(usages), "different lengths of prices and usages"
-    assert type(prices) == type(usages) == list, "prices or usages are not list"
+def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
+    # Ensure we have 96 periods
+    assert prices.shape[0] == usages.shape[0] == 96, "prices and usages must have 96 elements (one for each 15-min period)"
+    
     battery_cost_per_kwh = battery.one_kwh_cost()
     loading_per_segment = battery.charging_per_segment()
     battery_cap = battery.capacity
     
     info_list = []
-    battery_time = []
-    grid_time = []
+    battery_time = np.zeros(96)
+    grid_time = np.zeros(96)
+    
     battery_load_curr = 0
     
-    for i, (price, usage) in enumerate(zip(prices, usages)):
-        usage = float(usage)
+    for i in range(96):
+        price = float(prices[i])
+        usage = float(usages[i])
         
         while info_list and info_list[0].get_cost() < price and usage > 0:
             curr_period = heapq.heappop(info_list)
@@ -65,27 +62,27 @@ def best_algos_ever(prices, usages, battery:Battery):
             
             if usage >= remaining_energy:
                 usage -= remaining_energy
-                battery_time.append((curr_period.get_start(), remaining_energy))
+                battery_time[curr_period.get_start()] += remaining_energy
                 battery_load_curr -= remaining_energy
             else:
                 curr_period.lower_remaining_energy(usage)
                 heapq.heappush(info_list, curr_period)
-                battery_time.append((curr_period.get_start(), usage))
+                battery_time[curr_period.get_start()] += usage
                 battery_load_curr -= usage
                 usage = 0
         
         if usage > 0:
-            grid_time.append((i, usage)) 
-            if loading_per_segment - usage > 0 and battery_load_curr < battery_cap:
+            grid_time[i] += usage
+            if (loading_per_segment - usage) > 0 and battery_load_curr < battery_cap:
                 to_load = min(loading_per_segment - usage, battery_cap - battery_load_curr)
                 heapq.heappush(info_list, Info(to_load, battery_cost_per_kwh + price, i))
                 battery_load_curr += to_load
-
         else:
             to_load = min(loading_per_segment, battery_cap - battery_load_curr)
             battery_load_curr += to_load
             heapq.heappush(info_list, Info(to_load, price + battery_cost_per_kwh, i))
+        
+        buy_time, sell_time = load_only_to_sell(battery_time, prices, battery)
 
-    sell, load = load_only_to_sell(battery_time, grid_time, battery)
+    return battery_time, grid_time, buy_time, sell_time
 
-    return battery_time, grid_time
