@@ -1,5 +1,6 @@
 import heapq
 from battery_handler.battery_handler import Battery
+import numpy as np
 
 class Info:
     def __init__(self, remaining_energy, cost, start):
@@ -22,6 +23,27 @@ class Info:
     def get_start(self):
         return self.start
 
+def load_only_to_sell(battery_time, grid_time, battery:Battery):
+    free_load = np.full(96, battery.charging_per_segment())
+    cost_kw = battery.one_kwh_cost()
+    load = []
+    sell = []
+    
+    # checking how much of possible load per segment left
+    for start, amount in battery_time:
+        free_load[start] -= amount
+    for start, amount in grid_time:
+        free_load[start] -= amount
+    # loading only to sell
+    # for i, amount in reversed(list(enumerate(free_load))):
+        
+        
+        
+    return load, sell
+
+def load_to_use():
+    pass   
+
 def best_algos_ever(prices, usages, battery:Battery):
     assert len(prices) == len(usages), "different lengths of prices and usages"
     assert type(prices) == type(usages) == list, "prices or usages are not list"
@@ -29,7 +51,6 @@ def best_algos_ever(prices, usages, battery:Battery):
     loading_per_segment = battery.charging_per_segment()
     battery_cap = battery.capacity
     
-    battery_cost_per_15min = battery_cost_per_kwh * loading_per_segment
     info_list = []
     battery_time = []
     grid_time = []
@@ -64,6 +85,7 @@ def best_algos_ever(prices, usages, battery:Battery):
             to_load = min(loading_per_segment, battery_cap - battery_load_curr)
             battery_load_curr += to_load
             heapq.heappush(info_list, Info(to_load, price + battery_cost_per_kwh, i))
- 
+
+    sell, load = load_only_to_sell(battery_time, grid_time, battery)
 
     return battery_time, grid_time

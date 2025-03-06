@@ -42,7 +42,7 @@ def benchmark(battery_loading:list, grid_loading:list, prices:list, needed:list,
         print(f"loaded {sum(j for _, j in battery_loading)} battery and total cap = {total_cap}")
 
     load_per_index = {}
-    for start, amount in usage_list:
+    for start, amount in battery_loading:
         load_per_index[start] = load_per_index.get(start, 0) + amount
         assert load_per_index[start] <= max_load_15min + tol, f"Exceeded max load of {max_load_15min} at index {start}, with value = {load_per_index[start]}" 
 
@@ -146,4 +146,4 @@ def simulate(do_print = False, grant=False):
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=False)
+    simulate(do_print=True, grant=True)
