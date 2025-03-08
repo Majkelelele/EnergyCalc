@@ -13,17 +13,13 @@ ARR = NDArray[np.float32]
 def is_overloaded(battery_loading:ARR, usage:ARR, grid_loading:ARR, buy:ARR, sell:ARR, total_capacity:float, tol = TOL):
     battery = 0  # Initial battery level
     
-    # Apply battery loading events
-    # timeline += buy
-    # timeline -= sell
     # Simulate battery level over time
     for i in range(96):
         battery += battery_loading[i]
         battery -= usage[i]
         battery += grid_loading[i]
-        # print(battery)
-        # battery += buy[i]
-        # battery -= sell[i]
+        battery += buy[i]
+        battery -= sell[i]
 
         if battery > total_capacity + tol:
             return True 
@@ -34,6 +30,11 @@ def is_overloaded(battery_loading:ARR, usage:ARR, grid_loading:ARR, buy:ARR, sel
 # 1) - battery_loading - at given index, how much power to load battery -> price at loading time, not using time;
 # 2) - grid_loading - the same but when using energy directly from grid
 # 3) - prices is a list of prices at given 15min period (96indices)
+
+def is_loadable(battery_loading:ARR, buy:ARR, total_capacity:float, tol = TOL):
+    sum_load = battery_loading + buy
+    return np.all(sum_load <= total_capacity + tol)
+    
 
 def benchmark(
     battery_loading: ARR, 
@@ -56,17 +57,15 @@ def benchmark(
     assert not is_overloaded(battery_loading, usage, grid_loading, buy, sell, total_cap), "Battery overloaded"
     
 
-    load_per_index = np.zeros(96)
-    load_per_index += battery_loading
-    # load_per_index += buy
-    assert np.all(load_per_index <= max_load_15min + tol), f"Some values exceeded max load of {max_load_15min + tol}"
+
+    assert is_loadable(battery_loading,buy, battery.capacity), f"Some values exceeded max load of {max_load_15min + tol}"
         
     cost_per_kwh = battery.one_kwh_cost()
     total_cost = 0
     total_cost += (grid_loading * prices).sum()
     total_cost += (battery_loading * (prices + cost_per_kwh)).sum()
     total_cost += (buy * (prices + cost_per_kwh)).sum()
-    total_cost -= (sell * prices).sum()
+    total_cost -= (sell * prices).sum() 
     
 
     return total_cost
@@ -147,4 +146,4 @@ def simulate(do_print = False, grant=False, daily_usage=7.5):
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=20)
+    simulate(do_print=True, grant=True, daily_usage=7.5)
