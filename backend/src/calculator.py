@@ -6,6 +6,8 @@ import numpy as np
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
 from backend.scripts.making_data_script import generate_energy_usage_200days
 from backend.const import TOL, SIZE, CURRENT_B
+from providers import calculate_enea_price
+
 
 
 ARR = NDArray[np.float32]
@@ -70,37 +72,43 @@ def benchmark(
 
     return total_cost
 
-def total_profit(battery: Battery, load_to_sell=True):
+def total_profit(battery: Battery, load_to_sell=True, provider="enea"):
 
     usage_pattern = "../data_months/usage*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
     #ensuring that files are starting from day 0, and ascending
-    prices_pattern = "../data_months/enea*.csv"
+    prices_pattern = "../data_months/tge*.csv"
     prices_files = sorted(glob.glob(prices_pattern))
     # expected amount to be loaded in entire 15 min period
 
     results_only_grid = []
     results_michal = []
     for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
-
         # prices per kWh
         prices = np.array((pd.read_csv(f_price).values).flatten())
         # usage already in kWh
         usage = np.array((pd.read_csv(f_usage).values).flatten())
+        match provider:
+            case "enea":
+                prices, month_const_cost =  calculate_enea_price(prices)
+            case _:
+                raise ValueError("Wrong provider")
+        
+        battery_time, grid_time, buy, sell = best_algos_ever(prices,usage,battery,load_to_sell=load_to_sell, provider=provider)
+        res = round(benchmark(battery_time,grid_time,buy, sell, prices, usage, battery),3)
+        results_michal.append(res)
         
         res = round(benchmark(np.zeros(SIZE),usage,np.zeros(SIZE), np.zeros(SIZE), prices,usage, battery),3)
         results_only_grid.append(res)
 
 
-        battery_time, grid_time, buy, sell, month_const_cost = best_algos_ever(prices,usage,battery,load_to_sell=load_to_sell)
-        res = round(benchmark(battery_time,grid_time,buy, sell, prices, usage, battery),3)
-        results_michal.append(res)
+        
 
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), float(len(prices_files)) / 30.0, month_const_cost
 
-def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True):
+def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, provider="enea"):
     generate_energy_usage_200days(total_usage=daily_usage)
     batteries = [
         Battery(
@@ -132,7 +140,7 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True):
     expected_months_to_returns = []
     expected_months_res = []
     for i, bat in enumerate(batteries):
-        profit, months, month_const_cost = total_profit(bat, load_to_sell=load_to_sell)
+        profit, months, month_const_cost = total_profit(bat, load_to_sell=load_to_sell, provider=provider)
         avg_profit_month = round(profit / months  - month_const_cost,2)
         expected_months_to_return = round(bat.get_real_price() / avg_profit_month,2)
         expected_months_cycles = round(bat.get_expected_month_cycles(),2)
@@ -146,4 +154,4 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True):
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=7.5, load_to_sell=True)
+    simulate(do_print=True, grant=True, daily_usage=2, load_to_sell=True, provider="enea")

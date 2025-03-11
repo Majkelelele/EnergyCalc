@@ -1,9 +1,9 @@
 import heapq
 from battery_handler.battery_handler import Battery
+from backend.const import SIZE
 import numpy as np
-from backend.const import SIZE, CURRENT_A, CURRENT_B, VAT, ENEA_MONTHLY_COST
-
 import pandas as pd
+
 
 class Info:
     def __init__(self, remaining_energy, cost, start):
@@ -29,11 +29,6 @@ class Info:
         return self.start
  
  
-def calculate_enea_price(prices):
-    print(prices)
-    netto_prices = prices + CURRENT_A + CURRENT_B
-    brutto_prices = netto_prices * (1 + VAT)
-    return brutto_prices, ENEA_MONTHLY_COST
 
 def load_only_to_sell(battery_load, prices, battery):
     free_capacity = np.full(SIZE, battery.capacity) - battery_load
@@ -75,14 +70,7 @@ def load_only_to_sell(battery_load, prices, battery):
 def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery, load_to_sell=True, provider="enea"):
     # Ensure we have 96 periods
     assert prices.shape[0] == usages.shape[0] == SIZE, "prices and usages must have 96 elements (one for each 15-min period)"
-    month_const_cost = ENEA_MONTHLY_COST
-    # match provider:
-    #     case "enea":
-    #         prices, month_const_cost = calculate_enea_price(prices)
-    #     case _:
-    #         raise ValueError(f"Unknown provider: {provider}")
-        
-                
+            
     battery_cost_per_kwh = battery.one_kwh_cost()
     loading_per_segment = battery.charging_per_segment()
     battery_cap = battery.capacity
@@ -136,5 +124,5 @@ def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery, lo
             buy_time = np.zeros(SIZE)
             sell_time = np.zeros(SIZE)
 
-    return battery_load_time, grid_time, buy_time, sell_time, month_const_cost
+    return battery_load_time, grid_time, buy_time, sell_time
 
