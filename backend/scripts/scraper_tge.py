@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import csv
+import re
 import os
 
 options = Options()
@@ -22,12 +23,16 @@ try:
 
     base_xpath = '//*[@id="footable_kontrakty_godzinowe"]/tbody/tr[{}]/td[2]'
     button_xpath = '/html/body/section[3]/div/div/div[1]/a[1]'
+    date_xpath = "/html/body/section[4]/div/h4/small"
 
 
     days = 90
     for day in range(days):
         i = 1
         scraped_data = []
+        curr_date = driver.find_element(By.XPATH, date_xpath).text
+        date_match = re.search(r'\d{2}-\d{2}-\d{4}', curr_date)
+        date = date_match.group(0)
         while True:
             try:
                 current_xpath = base_xpath.format(i)
@@ -43,7 +48,7 @@ try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_folder = os.path.join(script_dir, "../data_months")
         os.makedirs(output_folder, exist_ok=True)
-        csv_file_path = os.path.join(output_folder, f"day_{day:02d}.csv")
+        csv_file_path = os.path.join(output_folder, f"day_{date}.csv")
 
         with open(csv_file_path, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)

@@ -141,16 +141,16 @@ if __name__ == "__main__":
         module_name='Canadian_Solar_CS5P_220M___2009_',
         inverter_library='CECInverter',
         inverter_name='ABB__PVI_3_0_OUTD_S_US__208V_',
-        modules_per_string=15,
-        strings_per_inverter=6,
+        modules_per_string=2,
+        strings_per_inverter=8,
         temperature_model='open_rack_glass_glass',
         data_start=2023,
         data_end=2023,
         data_date_for_ac="2023-07-01",
-        csv_output_path='backend/data/ac_power_15min.csv',
+        csv_output_path='../../data_months/solar_energy/lol',
         resample_freq='15min'
     )
     
     # Run the model, process the data, and plot (if desired)
-    pv_model.run_model()
+    pv_model.run_all()
     pv_model.plot_ac_data()

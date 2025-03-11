@@ -1,6 +1,9 @@
 import heapq
 from battery_handler.battery_handler import Battery
 import numpy as np
+from backend.const import SIZE, CURRENT_A, CURRENT_B, VAT, ENEA_MONTHLY_COST
+
+import pandas as pd
 
 class Info:
     def __init__(self, remaining_energy, cost, start):
@@ -24,10 +27,16 @@ class Info:
 
     def get_start(self):
         return self.start
-    
+ 
+ 
+def calculate_enea_price(prices):
+    print(prices)
+    netto_prices = prices + CURRENT_A + CURRENT_B
+    brutto_prices = netto_prices * (1 + VAT)
+    return brutto_prices, ENEA_MONTHLY_COST
 
 def load_only_to_sell(battery_load, prices, battery):
-    free_capacity = np.full(96, battery.capacity) - battery_load
+    free_capacity = np.full(SIZE, battery.capacity) - battery_load
     battery_usage_cost = battery.one_kwh_cost()
     
     n = len(prices)
@@ -63,22 +72,29 @@ def load_only_to_sell(battery_load, prices, battery):
     return buy_time, sell_time
 
 
-def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
+def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery, load_to_sell=True, provider="enea"):
     # Ensure we have 96 periods
-    assert prices.shape[0] == usages.shape[0] == 96, "prices and usages must have 96 elements (one for each 15-min period)"
-    
+    assert prices.shape[0] == usages.shape[0] == SIZE, "prices and usages must have 96 elements (one for each 15-min period)"
+    month_const_cost = ENEA_MONTHLY_COST
+    # match provider:
+    #     case "enea":
+    #         prices, month_const_cost = calculate_enea_price(prices)
+    #     case _:
+    #         raise ValueError(f"Unknown provider: {provider}")
+        
+                
     battery_cost_per_kwh = battery.one_kwh_cost()
     loading_per_segment = battery.charging_per_segment()
     battery_cap = battery.capacity
     
     info_list = []
-    battery_load_time = np.zeros(96)
-    grid_time = np.zeros(96)
-    battery_use_time = np.zeros(96)
+    battery_load_time = np.zeros(SIZE)
+    grid_time = np.zeros(SIZE)
+    battery_use_time = np.zeros(SIZE)
     
     battery_load_curr = 0
     
-    for i in range(96):
+    for i in range(SIZE):
         price = float(prices[i])
         usage = float(usages[i])
         assert usage >= 0, "usage < 0"
@@ -113,7 +129,12 @@ def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
             
         heapq.heappush(info_list, Info(loading_per_segment, battery_cost_per_kwh + price, i))
         final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
-        buy_time, sell_time = load_only_to_sell(final_cum_use, prices, battery)
+        
+        if load_to_sell:
+            buy_time, sell_time = load_only_to_sell(final_cum_use, prices, battery)
+        else:
+            buy_time = np.zeros(SIZE)
+            sell_time = np.zeros(SIZE)
 
-    return battery_load_time, grid_time, buy_time, sell_time
+    return battery_load_time, grid_time, buy_time, sell_time, month_const_cost
 
