@@ -5,7 +5,7 @@ import glob
 import numpy as np
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
 from backend.scripts.making_data_script import generate_energy_usage_200days
-from backend.const import TOL, SIZE, CURRENT_B
+from backend.const import TOL, SIZE
 from providers import calculate_enea_price, calculate_energa_prices, calculate_pge_prices, calculate_tauron_prices
 
 
@@ -160,4 +160,4 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=2, load_to_sell=True, provider="enea")
+    simulate(do_print=True, grant=True, daily_usage=2, load_to_sell=True, provider="energa")
