@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
 from backend.scripts.making_data_script import generate_energy_usage_200days
 from backend.const import TOL, SIZE, CURRENT_B
-from providers import calculate_enea_price
+from providers import calculate_enea_price, calculate_energa_prices, calculate_pge_prices, calculate_tauron_prices
 
 
 
@@ -91,6 +91,12 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea"):
         match provider:
             case "enea":
                 prices, month_const_cost =  calculate_enea_price(prices)
+            case "energa":
+                prices, month_const_cost =  calculate_energa_prices(prices)
+            case "pge":
+                prices, month_const_cost =  calculate_pge_prices(prices)
+            case "tauron":
+                prices, month_const_cost =  calculate_tauron_prices(prices)
             case _:
                 raise ValueError("Wrong provider")
         
