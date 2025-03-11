@@ -114,6 +114,8 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea"):
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     return sum(m - g for m, g in zip(results_only_grid, results_michal)), float(len(prices_files)) / 30.0, month_const_cost
 
+# load_to_sell - if True, we are enabling selling energy to back to grid,
+
 def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, provider="enea"):
     generate_energy_usage_200days(total_usage=daily_usage)
     batteries = [
