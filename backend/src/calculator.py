@@ -98,7 +98,7 @@ def total_profit(battery: Battery):
 
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
-    return sum(m - g for m, g in zip(results_only_grid, results_michal)), len(prices_files) / 30
+    return sum(m - g for m, g in zip(results_only_grid, results_michal)), float(len(prices_files)) / 30.0
 
 def simulate(do_print = False, grant=False, daily_usage=7.5):
     generate_energy_usage_200days(total_usage=daily_usage)
