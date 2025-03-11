@@ -19,11 +19,14 @@ app.add_middleware(
 class EnergyRequest(BaseModel):
     daily_usage: float
     grant_applicable: bool = False
+    provider: str = "enea"
+    load_to_sell: bool = True
 
 @app.post("/api/calculate")
 def api_call(request: EnergyRequest):
     batteries, avg_profits, expected_months_to_returns, expected_months_cycles = simulate(
-        do_print=False, grant=request.grant_applicable
+        do_print=False, grant=request.grant_applicable, daily_usage=request.daily_usage,
+        provider=request.provider, load_to_sell=request.load_to_sell
     )
 
     return {
