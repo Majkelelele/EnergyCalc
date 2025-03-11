@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 annotated-types==0.7.0
 anyio==4.8.0
 -e git+https://github.com/Majkelelele/EnergyCalc.git@1a67eb3905175e4c3f7fa2238e74825357011876#egg=backend
@@ -39,3 +40,29 @@ tzdata==2025.1
 urllib3==2.3.0
 uvicorn==0.34.0
 Werkzeug==3.1.3
+=======
+certifi==2025.1.31
+charset-normalizer==3.4.1
+contourpy==1.3.1
+cycler==0.12.1
+fonttools==4.56.0
+h5py==3.13.0
+idna==3.10
+kiwisolver==1.4.8
+matplotlib==3.10.1
+numpy==2.1.3
+packaging==24.2
+pandas==2.2.3
+pillow==11.1.0
+pip==22.0.2
+pvlib==0.11.2
+pyparsing==3.2.1
+python-dateutil==2.9.0.post0
+pytz==2024.2
+requests==2.32.3
+scipy==1.15.2
+setuptools==59.6.0
+six==1.16.0
+tzdata==2024.2
+urllib3==2.3.0
+>>>>>>> d65afcd3db9bf66af5129052b8390d43ae1c93bc
