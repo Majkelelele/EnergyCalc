@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from solar.solar_cell import SolarPanel
+# from solar.solar_cell import SolarPanel
 from calculator import simulate
 
 app = FastAPI()

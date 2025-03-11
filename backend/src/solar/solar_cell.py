@@ -3,71 +3,154 @@ from pvlib.modelchain import ModelChain
 from pvlib.location import Location
 from pvlib.pvsystem import PVSystem
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
+
 import pandas as pd
 import matplotlib.pyplot as plt
-from solar.get_weather_data import get_irradiation_data
-import numpy as np
 
-class SolarPanel:
-    def __init__(self, efficiency, area, sunlight_hours, latitude, longitude):
-        """
-        Initializes a SolarPanel instance.
-        :param efficiency: Efficiency of the panel (0 to 1).
-        :param area: Area of the panel in square meters.
-        :param sunlight_hours: Average sunlight hours per day.
-        :param latitude: Latitude coordinate of the panel location.
-        :param longitude: Longitude coordinate of the panel location.
-        """
-        self.efficiency = efficiency
-        self.area = area
-        self.sunlight_hours = sunlight_hours
-        self.latitude = latitude
-        self.longitude = longitude
-        self.solar_constant = 1000  # Average solar power per m² in W
+from get_weather_data import get_irradiation_data
+
+
+class PVSystemModel:
+    """
+    A class to set up and run a PV system simulation using pvlib.
     
-    def daily_energy_output(self):
+    Parameters provided in the constructor include location settings, 
+    PV module/inverter specifications, system configuration, and data retrieval parameters.
+    """
+    def __init__(self,
+                 latitude: float,
+                 longitude: float,
+                 tz: str,
+                 altitude: float,
+                 surface_tilt: float,
+                 surface_azimuth: float,
+                 module_library: str = 'SandiaMod',
+                 module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
+                 inverter_library: str = 'CECInverter',
+                 inverter_name: str = 'ABB__PVI_3_0_OUTD_S_US__208V_',
+                 modules_per_string: int = 8,
+                 strings_per_inverter: int = 2,
+                 temperature_model: str = 'open_rack_glass_glass',
+                 data_start: int = 2023,
+                 data_end: int = 2023,
+                 data_date_for_ac: str = "2023-07-01",
+                 csv_output_path: str = 'backend/data/ac_power_15min.csv',
+                 resample_freq: str = '15min'):
         """
-        Calculates the daily energy output in kWh.
+        Initializes the PV system simulation.
         """
-        energy = self.efficiency * self.area * self.solar_constant * self.sunlight_hours / 1000
-        return energy
+        # Set up location
+        self.location = Location(latitude=latitude, longitude=longitude, tz=tz, altitude=altitude)
+        
+        # Retrieve module and inverter specifications
+        modules = pvlib.pvsystem.retrieve_sam(module_library)
+        inverters = pvlib.pvsystem.retrieve_sam(inverter_library)
+        self.module = modules[module_name]
+        self.inverter = inverters[inverter_name]
+        
+        # Define temperature model parameters from pvlib's TEMPERATURE_MODEL_PARAMETERS
+        temperature_params = TEMPERATURE_MODEL_PARAMETERS['sapm'][temperature_model]
+        
+        # Define the PV system
+        self.system = PVSystem(surface_tilt=surface_tilt,
+                               surface_azimuth=surface_azimuth,
+                               module_parameters=self.module,
+                               inverter_parameters=self.inverter,
+                               temperature_model_parameters=temperature_params,
+                               modules_per_string=modules_per_string,
+                               strings_per_inverter=strings_per_inverter)
+        
+        # Create a ModelChain instance with the system and location
+        self.modelchain = ModelChain(system=self.system, location=self.location)
+        
+        # Data retrieval and processing parameters
+        self.data_start = data_start
+        self.data_end = data_end
+        self.data_date_for_ac = data_date_for_ac
+        self.csv_output_path = csv_output_path
+        self.resample_freq = resample_freq
+
+    def run_model(self):
+        """
+        Retrieves irradiation data and runs the PV system model.
+        """
+        # Retrieve POA irradiation data using a helper function
+        poa_data = get_irradiation_data(latitude=self.location.latitude,
+                                        longitude=self.location.longitude,
+                                        start=self.data_start,
+                                        end=self.data_end)
+        # Run the model from the plane-of-array data
+        self.modelchain.run_model_from_poa(poa_data)
     
-    def yearly_energy_output(self):
+    def process_and_save_ac_data(self):
         """
-        Calculates the yearly energy output in kWh.
+        Processes the AC power output data for a specific date by resampling and interpolating,
+        then saves the results to a CSV file.
         """
-        return self.daily_energy_output() * 365
+        # Extract AC power series for the specified date
+        ac_series = self.modelchain.results.ac.loc[self.data_date_for_ac]
+        
+        # Determine the start and end times for resampling (adding an extra 45 minutes for coverage)
+        start_time = ac_series.index.min()
+        end_time = ac_series.index.max() + pd.Timedelta(minutes=45)
+        
+        # Create a new datetime index at the specified frequency
+        new_index = pd.date_range(start=start_time, end=end_time,
+                                  freq=self.resample_freq,
+                                  tz=ac_series.index.tz)
+        
+        # Reindex the AC series to the new index and interpolate missing values
+        ac_resampled = ac_series.reindex(new_index)
+        ac_interpolated = ac_resampled.interpolate(method='time')
+        
+        # Save the processed data to CSV
+        ac_interpolated.to_csv(self.csv_output_path, index_label='timestamp')
     
-    def __str__(self):
-        return (f"Solar Panel: {self.area} m², Efficiency: {self.efficiency*100}%, Daily Output: {self.daily_energy_output():.2f} kWh, "
-                f"Location: ({self.latitude}, {self.longitude})")
-
-
-def save_solar_data(latitude = 52.20672318295605, longitude = 20.977651716685703,
-                    date:str = '2023-03-01', path:str = "../../data_months/"):
+    def plot_ac_data(self):
+        """
+        Plots the complete AC power output from the simulation.
+        """
+        plt.figure(figsize=(15, 10))
+        self.modelchain.results.ac.plot(title='PV System Output (AC Power)',
+                                        ylabel='AC Power (W)',
+                                        xlabel='Time')
+        plt.show()
     
-    location = Location(latitude=latitude, longitude=longitude, tz="Europe/Berlin", altitude=112)
-# specifications
-    modules = pvlib.pvsystem.retrieve_sam('SandiaMod')
-    inverters = pvlib.pvsystem.retrieve_sam('CECInverter')
-    module = modules['Canadian_Solar_CS5P_220M___2009_']
-    inverter = inverters['ABB__PVI_3_0_OUTD_S_US__208V_']
+    def run_all(self, plot: bool = False):
+        """
+        Convenience method to run the model, process data, and optionally plot the results.
+        """
+        self.run_model()
+        self.process_and_save_ac_data()
+        if plot:
+            self.plot_ac_data()
 
-    temperature_params = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
-    system = PVSystem(surface_tilt=45,  # the inclination of the module's surface with respect to the horizontal surface
-                    surface_azimuth=180,  # the angle between the South direction and the horizontal component of the surface normal
-                    module_parameters=module,
-                    inverter_parameters=inverter, 
-                    temperature_model_parameters=temperature_params,
-                    modules_per_string=8,
-                    strings_per_inverter=2)
 
-    modelchain = ModelChain(system=system, location=location)
-    poa_data = get_irradiation_data(latitude=latitude, longitude=longitude, start=2023, end=2023)
-    modelchain.run_model_from_poa(poa_data)
-    ac_power = abs(round(modelchain.results.ac / 1000, 3))
-    ac_power_march = ac_power[date].values / 4
-    ac_power_march = np.repeat(ac_power_march, 4)
-    pd.DataFrame(ac_power_march).to_csv(path + f"ac_power_15min_{date}.csv", index=False)
-
-# save_solar_data(date = "2023-08-01")
+# Example usage:
+if __name__ == "__main__":
+    # Create an instance with the desired parameters
+    pv_model = PVSystemModel(
+        latitude=52.20672318295605,
+        longitude=20.977651716685703,
+        tz="Europe/Berlin",
+        altitude=112,
+        surface_tilt=45,
+        surface_azimuth=180,
+        # module and inverter defaults are set as in the original code:
+        module_library='SandiaMod',
+        module_name='Canadian_Solar_CS5P_220M___2009_',
+        inverter_library='CECInverter',
+        inverter_name='ABB__PVI_3_0_OUTD_S_US__208V_',
+        modules_per_string=15,
+        strings_per_inverter=6,
+        temperature_model='open_rack_glass_glass',
+        data_start=2023,
+        data_end=2023,
+        data_date_for_ac="2023-07-01",
+        csv_output_path='backend/data/ac_power_15min.csv',
+        resample_freq='15min'
+    )
+    
+    # Run the model, process the data, and plot (if desired)
+    pv_model.run_model()
+    pv_model.plot_ac_data()

@@ -6,11 +6,13 @@
 
 # POA data vs TMY data https://www.nrel.gov/docs/fy20osti/74768.pdf
 
+# Data used for solar radiation is "Satellite data", which is used due to its availibility. The more accurate "Ground station measurements" are not used due to their limited availability, but in future we should consider using them when available and use satellite data if not. For comparison go to https://pvlib-python.readthedocs.io/en/v0.11.2/user_guide/weather_data.html
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import pvlib.iotools
 
-def get_irradiation_data(latitude, longitude, start, end):
+def get_irradiation_data(latitude, longitude, start, end, surface_tilt=45, surface_azimuth=0):
   """
   Retrieve hourly solar irradiance data from PVGIS-SARAH3 for a given location 
   and time range.
@@ -20,6 +22,8 @@ def get_irradiation_data(latitude, longitude, start, end):
       longitude (float): Longitude of the location.
       start (int): Start year for the data range.
       end (int): End year for the data range.
+      surface_tilt (int): Tilt angle of the surface in degrees. Default is 45.
+      surface_azimuth (int): Azimuth angle of the surface in degrees. Default is 0 (south).
 
   Returns:
       pd.DataFrame: A DataFrame containing calculated POA irradiance values:
@@ -44,8 +48,8 @@ def get_irradiation_data(latitude, longitude, start, end):
     start=start, end=end,
     raddatabase="PVGIS-SARAH3",
     components=True,
-    surface_tilt=45,
-    surface_azimuth=0, # 0 is South in PVGIS
+    surface_tilt=surface_tilt,
+    surface_azimuth=surface_azimuth, # 0 is South in PVGIS
     outputformat='csv',
     usehorizon=True, userhorizon=None,
     pvcalculation=False, peakpower=None, pvtechchoice='crystSi', mountingplace='free', loss=0, trackingtype=0, optimal_surface_tilt=False, optimalangles=False, url='https://re.jrc.ec.europa.eu/api/', map_variables=True, timeout=30
