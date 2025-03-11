@@ -24,19 +24,44 @@ class Info:
 
     def get_start(self):
         return self.start
-
-def load_only_to_sell(battery_time: list, prices: list, battery: Battery):
-#     free_load = np.full(96, battery.charging_per_segment(), dtype=float)
-#     free_load -= battery_time
-#     cost_kw = battery.one_kwh_cost()
-#     heap = []
-    buy_time = np.zeros(96)
-    sell_time = np.zeros(96)
-
-#     # Load battery to full
     
 
+def load_only_to_sell(battery_load, prices, battery):
+    free_capacity = np.full(96, battery.capacity) - battery_load
+    battery_usage_cost = battery.one_kwh_cost()
+    
+    n = len(prices)
+    buy_time = np.zeros(n)  # Stores amount of energy bought at each index
+    sell_time = np.zeros(n)  # Stores amount of energy sold at each index
+    
+    buy_idx = None  # Stores the last buy index
+    
+    for i in range(n - 1):
+        # Buying condition: Local minima and free capacity available
+        effective_buy_price = prices[i] + battery_usage_cost
+        if buy_idx is None or effective_buy_price < prices[buy_idx] + battery_usage_cost:
+            buy_idx = i
+        
+        # Lookahead strategy to find better selling opportunities
+        if buy_idx is not None:
+            future_max_price = max(prices[i:])  # Find highest price in the remaining periods
+            
+            if  prices[i] >= future_max_price * 0.95 and prices[i] > prices[buy_idx] + battery_usage_cost:  # Sell only if close to future peak
+                # Buy as much as possible at buy_idx and sell it here
+                energy_bought = np.min(free_capacity[buy_idx:i+1])                
+                # Adjust free capacity between buy_idx and i (holding energy until selling)
+                for t in range(buy_idx, i + 1):
+                    free_capacity[t] -= energy_bought
+                
+                # Store buy and sell amounts
+                buy_time[buy_idx] += energy_bought
+                sell_time[i] += energy_bought
+                
+                # Reset buy index after selling
+                buy_idx += 1
+    
     return buy_time, sell_time
+
 
 def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
     # Ensure we have 96 periods
@@ -47,40 +72,48 @@ def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery):
     battery_cap = battery.capacity
     
     info_list = []
-    battery_time = np.zeros(96)
+    battery_load_time = np.zeros(96)
     grid_time = np.zeros(96)
+    battery_use_time = np.zeros(96)
     
     battery_load_curr = 0
     
     for i in range(96):
         price = float(prices[i])
         usage = float(usages[i])
+        assert usage >= 0, "usage < 0"
         
-        while info_list and info_list[0].get_cost() < price and usage > 0:
+        
+        while info_list and info_list[0].get_cost() < price and usage > 0 and battery_load_curr < battery_cap:
             curr_period = heapq.heappop(info_list)
+            cum_use = np.cumsum(battery_use_time)
+            cum_load = np.cumsum(battery_load_time)
+            battery_load = cum_load - cum_use
+            # print(battery_load.round(2))
+            battery_load_curr = np.max(battery_load[curr_period.get_start():i])
             remaining_energy = curr_period.get_remaining_energy()
+            remaining_cap = max(0,battery_cap - battery_load_curr)
+            # print(f"cap = {remaining_cap}, battery_load_curr = {battery_load_curr}, battery_cap = {battery_cap}")
             
-            if usage >= remaining_energy:
-                usage -= remaining_energy
-                battery_time[curr_period.get_start()] += remaining_energy
-                battery_load_curr -= remaining_energy
-            else:
-                curr_period.lower_remaining_energy(usage)
-                heapq.heappush(info_list, curr_period)
-                battery_time[curr_period.get_start()] += usage
-                battery_load_curr -= usage
-                usage = 0
+            to_load = min(remaining_cap, min(usage, remaining_energy))
+            # print(f"to_load = {to_load}")
+
+            if to_load == usage or to_load == remaining_cap:
+                curr_period.lower_remaining_energy(to_load)
+                if curr_period.get_remaining_energy() > 0:
+                    heapq.heappush(info_list, curr_period)
+            battery_use_time[i] += to_load
+            usage -= to_load
+            battery_load_curr += to_load
+            battery_load_time[curr_period.get_start()] += to_load
+                
         
         if usage > 0:
             grid_time[i] += usage
             
-        if  battery_load_curr < battery_cap:
-            to_load = min(loading_per_segment, battery_cap - battery_load_curr)
-            heapq.heappush(info_list, Info(to_load, battery_cost_per_kwh + price, i))
-            battery_load_curr += to_load
-        
-        
-        buy_time, sell_time = load_only_to_sell(battery_time, prices, battery)
+        heapq.heappush(info_list, Info(loading_per_segment, battery_cost_per_kwh + price, i))
+        final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
+        buy_time, sell_time = load_only_to_sell(final_cum_use, prices, battery)
 
-    return battery_time, grid_time, buy_time, sell_time
+    return battery_load_time, grid_time, buy_time, sell_time
 
