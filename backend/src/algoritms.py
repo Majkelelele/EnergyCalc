@@ -71,8 +71,8 @@ def best_algos_ever(prices: np.ndarray, usages: np.ndarray, battery: Battery, lo
     # Ensure we have 96 periods
     assert prices.shape[0] == usages.shape[0] == SIZE, "prices and usages must have 96 elements (one for each 15-min period)"
             
-    battery_cost_per_kwh = battery.one_kwh_cost()
-    loading_per_segment = battery.charging_per_segment()
+    battery_cost_per_kwh = battery.one_kwh_cost() # cost of charging and discharging 1 kWh
+    loading_per_segment = battery.charging_per_segment() # how many kWh per 15 min
     battery_cap = battery.capacity
     
     info_list = []
