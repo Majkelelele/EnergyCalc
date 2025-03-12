@@ -1,5 +1,8 @@
 from battery_handler.consts import DEFAULT_VOLTAGE, DEFAULT_AMPERAGE
 
+# https://pybamm.org/
+# library for simulating batteries TODO
+
 class Battery:
     def __init__(
             self, 
@@ -55,6 +58,7 @@ class Battery:
         return self.price - self.grant_reduction
         
     def __charging_time(self) -> float:
+        # shouldnt this be capacity * DOD - charge_level? TODO
         return round(((self.capacity - self.charge_level) * self.DoD) \
                 / (self.socket_power_output * self.efficiency),3)
 
@@ -64,6 +68,7 @@ class Battery:
 
     
     def __calculate_charging_per_hour(self) -> float:
+        # shouldnt we multiply capacity by DOD? TODO
         return round(self.capacity / self.__max_charging_time(),3)
 
     def one_cycle_cost(self):
