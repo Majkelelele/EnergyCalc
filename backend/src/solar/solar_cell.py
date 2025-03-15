@@ -19,8 +19,8 @@ class PV:
     PV module/inverter specifications, system configuration, and data retrieval parameters.
     """
     def __init__(self,
-                 surface_tilt: float,
-                 surface_azimuth: float,
+                 surface_tilt: float = 45,
+                 surface_azimuth: float = 180,
                  module_library: str = 'SandiaMod',
                  module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
                  inverter_library: str = 'CECInverter',
@@ -52,21 +52,31 @@ class PV:
                                strings_per_inverter=strings_per_inverter)
 
 
+import pandas as pd
+
 class PVModel:
     def __init__(self, 
-            pv_models: [PV],
-            latitude: float,
-            longitude: float,
-            tz: str,
-            altitude: float,
-            data_start: int = 2023,
-            data_end: int = 2023,
-            data_date_for_ac: str = "2023-07-01",
-            csv_output_path: str = 'backend/data/ac_power_15min.csv',
-            resample_freq: str = '15min'):
-
+                 pv_models: [PV],
+                 latitude: float,
+                 longitude: float,
+                 tz: str,
+                 altitude: float,
+                 data_date_range: tuple = ("2023-07-01", "2023-07-01"),
+                 csv_output_path: str = 'backend/data/ac_power_15min.csv',
+                 resample_freq: str = '15min'):
         """
         Initializes the PV system simulation.
+        
+        Parameters:
+            pv_models (list): List of PV system models.
+            latitude (float): Latitude of the location.
+            longitude (float): Longitude of the location.
+            tz (str): Timezone.
+            altitude (float): Altitude.
+            data_date_range (tuple): A tuple of two date strings (start_date, end_date)
+                                     for which AC power data is processed.
+            csv_output_path (str): Path for the CSV output.
+            resample_freq (str): Resampling frequency.
         """
         
         # Set up location
@@ -75,14 +85,21 @@ class PVModel:
         # Create ModelChain instances with the systems and location
         self.model_chains = [ModelChain(system=model.system, location=self.location) for model in pv_models]
         
-        # Data retrieval and processing parameters
-        self.data_start = data_start
-        self.data_end = data_end
-        self.data_date_for_ac = data_date_for_ac
+        # Calculate data_start and data_end from data_date_range
+        start_date, end_date = data_date_range
+        start_year = pd.to_datetime(start_date).year
+        end_year = pd.to_datetime(end_date).year
+        
+        # Assert that the years do not exceed 2023
+        assert start_year <= 2023 and end_year <= 2023, "Data is available only till 2023."
+        
+        self.data_date_range = data_date_range
+        self.data_start = start_year
+        self.data_end = end_year
         self.csv_output_path = csv_output_path
         self.resample_freq = resample_freq
 
-        # Calculate the AC output in 15 min intervals
+        # Calculate the AC output in specified intervals over the date range
         self.ac_series = self.__process_ac_data()
 
     def __run_models(self):
@@ -100,14 +117,17 @@ class PVModel:
     
     def __process_ac_data(self):
         """
-        Processes the AC power output data for a specific date by resampling and interpolating,
-        then saves the results to a CSV file.
+        Processes the AC power output data for the specified date range by resampling and interpolating,
+        then returns the processed series.
         """
-        # Extract AC power series for the specified date
-        
+        # Run the models to generate results
         self.__run_models()
 
-        ac_series = sum(modelchain.results.ac.loc[self.data_date_for_ac] for modelchain in self.model_chains)
+        # Unpack the date range
+        start_date, end_date = self.data_date_range
+        
+        # Extract AC power series for the specified date range from all model chains
+        ac_series = sum(modelchain.results.ac.loc[start_date:end_date] for modelchain in self.model_chains)
         
         # Determine the start and end times for resampling (adding an extra 45 minutes for coverage)
         start_time = ac_series.index.min()
@@ -124,9 +144,10 @@ class PVModel:
         
         return ac_interpolated
 
-    
     def save_ac_data(self):
-        # Save the processed data to CSV
+        """
+        Saves the processed AC power output data to a CSV file.
+        """
         self.ac_series.to_csv(self.csv_output_path, index_label='timestamp')
 
     def plot_ac_data(self):
@@ -135,8 +156,8 @@ class PVModel:
         """
         plt.figure(figsize=(15, 10))
         self.ac_series.plot(title='PV System Output (AC Power)',
-                                        ylabel='AC Power (W)',
-                                        xlabel='Time')
+                            ylabel='AC Power (W)',
+                            xlabel='Time')
         plt.show()
     
     def run_all(self):
@@ -145,7 +166,65 @@ class PVModel:
         """
         # self.save_ac_data()
         self.plot_ac_data()
-        
+
+def function_for_michal_zmyslony(
+    *,
+    # PV parameters
+    surface_tilt: float = 45,
+    surface_azimuth: float = 180,
+    module_library: str = 'SandiaMod',
+    module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
+    inverter_library: str = 'CECInverter',
+    inverter_name: str = 'ABB__PVI_3_0_OUTD_S_US__208V_',
+    modules_per_string: int = 8,
+    strings_per_inverter: int = 2,
+    temperature_model: str = 'open_rack_glass_glass',
+    # PVModel parameters
+    latitude: float,
+    longitude: float,
+    tz: str,
+    altitude: float,
+    data_date_range: tuple = ("2023-07-01", "2023-07-01"),
+    csv_output_path: str = 'backend/data/ac_power_15min.csv',
+    resample_freq: str = '15min'
+):
+    """
+    Convenience function for Michal Zmyslony that creates a PV system and runs the simulation.
+    
+    It sets up the PV system with the given parameters, initializes the model, runs the simulation,
+    and plots the AC power output.
+    """
+    # Create the PV system instance
+    pv_instance = PV(
+        surface_tilt=surface_tilt,
+        surface_azimuth=surface_azimuth,
+        module_library=module_library,
+        module_name=module_name,
+        inverter_library=inverter_library,
+        inverter_name=inverter_name,
+        modules_per_string=modules_per_string,
+        strings_per_inverter=strings_per_inverter,
+        temperature_model=temperature_model
+    )
+    
+    # Create the PVModel instance
+    pv_model_instance = PVModel(
+        pv_models=[pv_instance],
+        latitude=latitude,
+        longitude=longitude,
+        tz=tz,
+        altitude=altitude,
+        data_date_range=data_date_range,
+        csv_output_path=csv_output_path,
+        resample_freq=resample_freq
+    )
+    
+    # Run the simulation (this will plot and save the AC power data)
+    pv_model_instance.run_all()
+    
+    return pv_instance, pv_model_instance
+
+
 
 # Example usage:
 if __name__ == "__main__":
