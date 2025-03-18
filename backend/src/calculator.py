@@ -175,5 +175,5 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=4, load_to_sell=True, provider="enea", switching_from_static=True)
+    simulate(do_print=True, grant=True, daily_usage=4, load_to_sell=True, provider="enea", switching_from_static=False)
 

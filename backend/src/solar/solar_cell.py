@@ -255,4 +255,6 @@ if __name__ == "__main__":
     )
     
     # Run the model, process the data, and plot (if desired)
-    pv_system.run_all()
+    # pv_system.run_all()
+    
+    function_for_michal_zmyslony()
