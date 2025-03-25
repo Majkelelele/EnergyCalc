@@ -7,6 +7,7 @@ from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 from get_weather_data import get_irradiation_data
 
@@ -62,7 +63,7 @@ class PVModel:
                  tz: str,
                  altitude: float,
                  data_date_range: tuple = ("2023-07-01", "2023-07-01"),
-                 csv_output_path: str = 'backend/data/ac_power_15min.csv',
+                 csv_output_path: str = '../../data/ac_power_15min.csv',
                  resample_freq: str = '15min'):
         """
         Initializes the PV system simulation.
@@ -91,7 +92,7 @@ class PVModel:
         end_year = pd.to_datetime(end_date).year
         
         # Assert that the years do not exceed 2023
-        assert start_year <= 2023 and end_year <= 2023, "Data is available only till 2023."
+        assert start_year >= 2018 and end_year <= 2023, "Data is available only till 2023."
         
         self.data_date_range = data_date_range
         self.data_start = start_year
@@ -148,7 +149,38 @@ class PVModel:
         """
         Saves the processed AC power output data to a CSV file.
         """
-        self.ac_series.to_csv(self.csv_output_path, index_label='timestamp')
+        # Ensure the index is a datetime type
+        if not pd.api.types.is_datetime64_any_dtype(self.ac_series.index):
+            self.ac_series.index = pd.to_datetime(self.ac_series.index)
+        
+        # Create the output directory if it doesn't exist
+        if not os.path.exists(self.csv_output_path):
+            os.makedirs(self.csv_output_path)
+        
+        current_date = None
+        current_file = None
+        
+        # Iterate over each (timestamp, value) pair in the series
+        for timestamp, value in self.ac_series.items():
+            # Format the timestamp to get the date (YYYY-MM-DD)
+            date_str = timestamp.strftime('%Y-%m-%d')
+            
+            # When the day changes, close the previous file (if open) and open a new one
+            if date_str != current_date:
+                if current_file is not None:
+                    current_file.close()
+                current_date = date_str
+                filename = os.path.join(self.csv_output_path, f"{date_str}.csv")
+                current_file = open(filename, 'w')
+            
+            # Write the value to the file, followed by a newline
+            current_file.write(f"{value}\n")
+        
+        # Make sure to close the last file
+        if current_file is not None:
+            current_file.close()
+        
+        
 
     def plot_ac_data(self):
         """
@@ -164,8 +196,8 @@ class PVModel:
         """
         Convenience method to run the model, process data, and optionally plot the results.
         """
-        # self.save_ac_data()
-        self.plot_ac_data()
+        self.save_ac_data()
+        # self.plot_ac_data()
 
 def function_for_michal_zmyslony(
     *,
@@ -180,12 +212,12 @@ def function_for_michal_zmyslony(
     strings_per_inverter: int = 2,
     temperature_model: str = 'open_rack_glass_glass',
     # PVModel parameters
-    latitude: float,
-    longitude: float,
-    tz: str,
-    altitude: float,
+    latitude: float = 52.20672318295605,
+    longitude: float = 20.977651716685703,
+    tz: str = "Europe/Berlin",
+    altitude: float = 112,
     data_date_range: tuple = ("2023-07-01", "2023-07-01"),
-    csv_output_path: str = 'backend/data/ac_power_15min.csv',
+    csv_output_path: str = '/Users/belguteitsevegmed/Desktop/programowanie/zpp/EnergyCalc/backend/data',
     resample_freq: str = '15min'
 ):
     """
@@ -246,9 +278,7 @@ if __name__ == "__main__":
         longitude=20.977651716685703,
         tz="Europe/Berlin",
         altitude=112,
-        data_start=2023,
-        data_end=2023,
-        data_date_for_ac="2023-07-01",
+        data_date_range=("2023-07-01", "2023-07-01"),
         csv_output_path='../../data_months/solar_energy/ac_pv.csv',
         resample_freq='15min',
         pv_models = [pv_model]
@@ -257,4 +287,4 @@ if __name__ == "__main__":
     # Run the model, process the data, and plot (if desired)
     # pv_system.run_all()
     
-    function_for_michal_zmyslony()
+    function_for_michal_zmyslony(data_date_range=("2023-07-01", "2023-07-10"))
