@@ -5,4 +5,5 @@ __pycache__
 *usage*
 backend/data_months/usage_*.csv
 backend/data_months/solar_energy/*
+backend/data_months/*
 backend/data/*
