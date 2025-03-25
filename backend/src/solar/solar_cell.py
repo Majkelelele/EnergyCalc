@@ -174,7 +174,7 @@ class PVModel:
                 current_file = open(filename, 'w')
             
             # Write the value to the file, followed by a newline
-            current_file.write(f"{value}\n")
+            current_file.write(f"{round(value / 1000, 3)}\n")
         
         # Make sure to close the last file
         if current_file is not None:
@@ -208,8 +208,8 @@ def function_for_michal_zmyslony(
     module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
     inverter_library: str = 'CECInverter',
     inverter_name: str = 'ABB__PVI_3_0_OUTD_S_US__208V_',
-    modules_per_string: int = 8,
-    strings_per_inverter: int = 2,
+    modules_per_string: int = 4,
+    strings_per_inverter: int = 1,
     temperature_model: str = 'open_rack_glass_glass',
     # PVModel parameters
     latitude: float = 52.20672318295605,
@@ -217,7 +217,7 @@ def function_for_michal_zmyslony(
     tz: str = "Europe/Berlin",
     altitude: float = 112,
     data_date_range: tuple = ("2023-07-01", "2023-07-01"),
-    csv_output_path: str = '/Users/belguteitsevegmed/Desktop/programowanie/zpp/EnergyCalc/backend/data',
+    csv_output_path: str = '../../data',
     resample_freq: str = '15min'
 ):
     """
@@ -287,4 +287,4 @@ if __name__ == "__main__":
     # Run the model, process the data, and plot (if desired)
     # pv_system.run_all()
     
-    function_for_michal_zmyslony(data_date_range=("2023-07-01", "2023-07-10"))
+    function_for_michal_zmyslony(data_date_range=("2023-01-11", "2023-03-12"))

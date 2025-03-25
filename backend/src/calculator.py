@@ -126,8 +126,8 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching
     months = float(len(prices_files)) / 30.0
     return sum(m - g for m, g in zip(results_only_grid, results_michal)) - (month_const_cost_1 - month_const_cost_2) * months, months
 
-# load_to_sell - if True, we are enabling selling energy to back to grid,
 
+# load_to_sell - if True, we are enabling selling energy to back to grid,
 def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, provider="enea",
              switching_from_static=False):
     generate_energy_usage_200days(total_usage=daily_usage)
@@ -175,5 +175,5 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=4, load_to_sell=True, provider="enea", switching_from_static=False)
+    simulate(do_print=True, grant=True, daily_usage=7.5, load_to_sell=True, provider="enea", switching_from_static=False)
 
