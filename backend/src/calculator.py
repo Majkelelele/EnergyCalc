@@ -4,7 +4,7 @@ from algoritms import best_algos_ever
 import glob
 import numpy as np
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
-from backend.scripts.making_data_script import generate_energy_usage_200days
+from backend.scripts.making_data_script import generate_energy_usage_days
 from backend.const import TOL, SIZE
 from providers import calculate_enea_price, calculate_energa_prices, calculate_pge_prices, calculate_tauron_prices
 
@@ -72,22 +72,28 @@ def benchmark(
 
     return total_cost
 
-def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False):
+def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False, solar_avaialable=False):
 
-    usage_pattern = "../data_months/usage*.csv"
+    usage_pattern = "../data_months/usage/*.csv"
     usage_files = sorted(glob.glob(usage_pattern))
     #ensuring that files are starting from day 0, and ascending
-    prices_pattern = "../data_months/tge*.csv"
+    prices_pattern = "../data_months/tge/*.csv"
     prices_files = sorted(glob.glob(prices_pattern))
+    
+    solar_pattern = "../data_months/solar_output/*.csv"
+    solar_files = sorted(glob.glob(solar_pattern))
     # expected amount to be loaded in entire 15 min period
-
     results_only_grid = []
     results_michal = []
-    for i, (f_price, f_usage) in enumerate(zip(prices_files, usage_files)):
+    for i, (f_price, f_usage, f_solar) in enumerate(zip(prices_files, usage_files, solar_files)):
         # prices per kWh
         prices = np.array((pd.read_csv(f_price).values).flatten())
         # usage already in kWh
         usage = np.array((pd.read_csv(f_usage).values).flatten())
+        solar = np.array((pd.read_csv(f_solar).values).flatten())
+        if solar_avaialable:
+            usage = np.maximum(0, usage - solar)
+        
         match provider:
             case "enea":
                 prices, month_const_cost_1 =  calculate_enea_price(prices)
@@ -104,6 +110,7 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching
         res = round(benchmark(battery_load_time,grid_time,buy, sell, prices, usage, battery),3)
         results_michal.append(res)
         
+        
         prices = np.array((pd.read_csv(f_price).values).flatten())
 
         match provider:
@@ -118,19 +125,24 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching
             case _:
                 raise ValueError("Wrong provider")
         res = round(benchmark(np.zeros(SIZE),usage,np.zeros(SIZE), np.zeros(SIZE), prices,usage, battery),3)
+    
+
         results_only_grid.append(res)
 
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
     if not switching_from_static:
         assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
+    max_diff = max([p1 - p2 for p1, p2 in zip(results_only_grid, results_michal)])
+    print(f"max diff = {max_diff}")
     months = float(len(prices_files)) / 30.0
+    
     return sum(m - g for m, g in zip(results_only_grid, results_michal)) - (month_const_cost_1 - month_const_cost_2) * months, months
 
 
 # load_to_sell - if True, we are enabling selling energy to back to grid,
 def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, provider="enea",
-             switching_from_static=False):
-    generate_energy_usage_200days(total_usage=daily_usage)
+             switching_from_static=False, solar_avaialable=False):
+    generate_energy_usage_days(total_usage=daily_usage)
     batteries = [
         Battery(
         price=4800, 
@@ -161,7 +173,7 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
     expected_months_to_returns = []
     expected_months_res = []
     for i, bat in enumerate(batteries):
-        profit, months = total_profit(bat, load_to_sell=load_to_sell, provider=provider, switching_from_static=switching_from_static)
+        profit, months = total_profit(bat, load_to_sell=load_to_sell, provider=provider, switching_from_static=switching_from_static, solar_avaialable=solar_avaialable)
         avg_profit_month = round(profit / months,2)
         expected_months_to_return = round(bat.get_real_price() / avg_profit_month,2)
         expected_months_cycles = round(bat.get_expected_month_cycles(),2)
@@ -175,5 +187,4 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
     return batteries, avg_profits, expected_months_to_returns, expected_months_cycles
 
 if __name__ == "__main__":
-    simulate(do_print=True, grant=True, daily_usage=7.5, load_to_sell=True, provider="enea", switching_from_static=False)
-
+    simulate(do_print=True, grant=True, daily_usage=4, load_to_sell=True, provider="pge", switching_from_static=False, solar_avaialable=True)

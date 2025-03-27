@@ -145,40 +145,24 @@ class PVModel:
         
         return ac_interpolated
 
+
     def save_ac_data(self):
         """
-        Saves the processed AC power output data to a CSV file.
+        Saves the processed AC power output data to a CSV file with an appropriate column name.
+        Only the output values are saved, without timestamps.
         """
-        # Ensure the index is a datetime type
-        if not pd.api.types.is_datetime64_any_dtype(self.ac_series.index):
-            self.ac_series.index = pd.to_datetime(self.ac_series.index)
-        
         # Create the output directory if it doesn't exist
         if not os.path.exists(self.csv_output_path):
             os.makedirs(self.csv_output_path)
         
-        current_date = None
-        current_file = None
+        # Convert the series into a DataFrame with a proper column name
+        df = pd.DataFrame({'Solar Output (kW)': self.ac_series.values / 1000})
         
-        # Iterate over each (timestamp, value) pair in the series
-        for timestamp, value in self.ac_series.items():
-            # Format the timestamp to get the date (YYYY-MM-DD)
-            date_str = timestamp.strftime('%Y-%m-%d')
-            
-            # When the day changes, close the previous file (if open) and open a new one
-            if date_str != current_date:
-                if current_file is not None:
-                    current_file.close()
-                current_date = date_str
-                filename = os.path.join(self.csv_output_path, f"{date_str}.csv")
-                current_file = open(filename, 'w')
-            
-            # Write the value to the file, followed by a newline
-            current_file.write(f"{round(value / 1000, 3)}\n")
-        
-        # Make sure to close the last file
-        if current_file is not None:
-            current_file.close()
+        # Iterate over unique dates and save separate CSV files
+        for date, group in df.groupby(self.ac_series.index.date):
+            filename = os.path.join(self.csv_output_path, f"{date}.csv")
+            group.to_csv(filename, index=False, header=True)
+
         
         
 
@@ -217,7 +201,7 @@ def function_for_michal_zmyslony(
     tz: str = "Europe/Berlin",
     altitude: float = 112,
     data_date_range: tuple = ("2023-07-01", "2023-07-01"),
-    csv_output_path: str = '../../data',
+    csv_output_path: str = '../../data_months/solar_output',
     resample_freq: str = '15min'
 ):
     """
@@ -270,7 +254,7 @@ if __name__ == "__main__":
         inverter_library='CECInverter',
         inverter_name='ABB__PVI_3_0_OUTD_S_US__208V_',
         modules_per_string=2,
-        strings_per_inverter=8,
+        strings_per_inverter=4,
         temperature_model='open_rack_glass_glass',
     )
     pv_system = PVModel(
@@ -287,4 +271,4 @@ if __name__ == "__main__":
     # Run the model, process the data, and plot (if desired)
     # pv_system.run_all()
     
-    function_for_michal_zmyslony(data_date_range=("2023-01-11", "2023-03-12"))
+    function_for_michal_zmyslony(data_date_range=("2023-01-27", "2023-03-28"))

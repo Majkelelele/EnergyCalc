@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime, timedelta
 
 def generate_energy_usage(day, total_usage=7.5):
     # Number of 15-minute periods in a day
@@ -22,12 +23,13 @@ def generate_energy_usage(day, total_usage=7.5):
     df = pd.DataFrame({
         'Energy_Usage_kWh': energy_usage
     })
-
-    # Save to CSV
-    df.to_csv(f"../data_months/usage_{day:02d}.csv", index=False)
     
-def generate_energy_usage_200days(total_usage=7.5):
-    for i in range(200):
-        generate_energy_usage(i, total_usage=total_usage)
-        
-generate_energy_usage_200days(8)
+    # Save to CSV
+    df.to_csv(f"../data_months/usage/{day}.csv", index=False)
+    
+def generate_energy_usage_days(total_usage=7.5, days=61):
+    for i in range(days):
+        # Generate past date string (YYYY-MM-DD)
+        day = (datetime.now() - timedelta(days=i-1)).strftime("%Y-%m-%d")
+        generate_energy_usage(day, total_usage=total_usage)
+    

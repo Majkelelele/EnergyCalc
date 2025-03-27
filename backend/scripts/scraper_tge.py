@@ -44,7 +44,7 @@ try:
             i += 1
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_folder = os.path.join(script_dir, "../data_months")
+        output_folder = os.path.join(script_dir, "../data_months/tge")
         os.makedirs(output_folder, exist_ok=True)
 
         csv_file_path = os.path.join(output_folder, f"tge_{formatted_date}.csv")  # Correct filename format
