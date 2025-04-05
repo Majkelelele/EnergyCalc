@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 # from solar.solar_cell import SolarPanel
-from calculator import simulate
+from calculator import simulate, run_best_algos_one_day, calculate_one_day
+from backend.const import BATTERIES
+import numpy as np
 
 app = FastAPI()
 
@@ -22,6 +24,11 @@ class EnergyRequest(BaseModel):
     grant_applicable: bool = False
     provider: str = "enea"
     load_to_sell: bool = True
+    
+class LoadingRequest(BaseModel):
+    provider: str = "enea"
+    load_to_sell: bool = True
+    date: str
 
 class CSVFileNameRequest(BaseModel):
     date: str
@@ -64,5 +71,59 @@ def process_csv(request: CSVFileNameRequest):
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/grid_time-battery_time")
+def process_csv(request: LoadingRequest):
+    f_price =  "../data_months/tge/" + request.date + ".csv"
+    f_usage =  "../data_months/usage/" + request.date + ".csv"
+    prices = np.array((pd.read_csv(f_price).values).flatten())
+
+    # usage already in kWh
+    usage = np.array((pd.read_csv(f_usage).values).flatten())
+
+
+    # Read the CSV file
+    try:
+        # for b in BATTERIES:
+        battery_load_time, grid_time, buy, sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, BATTERIES[2], request.load_to_sell, request.provider)
+            
+
+        battery_time = battery_load_time.tolist()
+        grid_time = grid_time.tolist()
+        return {
+            "battery_time": battery_time,
+            "grid_time": grid_time,
+        }
+    
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/benchmark_algos_cost")
+def process_csv(request: LoadingRequest):
+    f_price =  "../data_months/tge/" + request.date + ".csv"
+    f_usage =  "../data_months/usage/" + request.date + ".csv"
+
+
+    # Read the CSV file
+    try:
+        # for b in BATTERIES:
+        res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, BATTERIES[0], request.load_to_sell, request.provider)        
+
+        # TODO
+        # if res_algos is negative it means that we acutally could earn money, not only save money,
+        # to add is check how much in theory can be earned
+        return {
+            "res_algos": res_algos,
+            "res_benchmark": res_benchmark,
+        }
+    
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
 
 # Run with: uvicorn api:app --reload

@@ -27,7 +27,7 @@ def generate_energy_usage(day, total_usage=7.5):
     # Save to CSV
     df.to_csv(f"../data_months/usage/{day}.csv", index=False)
     
-def generate_energy_usage_days(total_usage=7.5, days=61):
+def generate_energy_usage_days(total_usage=7.5, days=360):
     for i in range(days):
         # Generate past date string (YYYY-MM-DD)
         day = (datetime.now() - timedelta(days=i-1)).strftime("%Y-%m-%d")

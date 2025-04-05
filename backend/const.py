@@ -1,3 +1,5 @@
+from backend.src.battery_handler.battery_handler import Battery
+
 TOL = 0.05
 SIZE = 96
 # aktualna na dzień poboru energii stawka podatku akcyzowego (zł/kWh); aktualna stawka podatku akcyzowego wynosi 5 zł/MWh;
@@ -29,3 +31,30 @@ TAURON_MONTHLY_COST_STATIC = 0
 
 PGE_MIN_PRICE_CAP = 0
 TAURON_MIN_PRICE_CAP = 0.005
+
+BATTERIES = [
+        Battery(
+        price=4800, 
+        capacity=2.88, 
+        DoD=0.9, 
+        efficiency=0.95, 
+        life_cycles=6000,
+        grant_reduction=True
+    ),
+    Battery(
+        price=8000, 
+        capacity=5.18, 
+        DoD=0.95, 
+        efficiency=0.98, 
+        life_cycles=4000,
+        grant_reduction=True
+    ),
+    Battery(
+        price=14350, 
+        capacity=10.36, 
+        DoD=0.9, 
+        efficiency=0.95, 
+        life_cycles=4000,
+        grant_reduction=True
+    ),
+    ]

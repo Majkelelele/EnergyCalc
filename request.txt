@@ -1,0 +1,8 @@
+curl -X POST http://localhost:8000/api/grid_time-battery_time \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "enea", "load_to_sell": "True", "date":"2025-03-23"}'
+
+
+  curl -X POST http://localhost:8000/api/benchmark_algos_cost \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "enea", "load_to_sell": "True", "date":"2025-03-15"}'

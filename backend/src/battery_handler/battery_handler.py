@@ -53,6 +53,9 @@ class Battery:
 
     def get_expected_month_cycles(self):
         return (self.life_cycles + 0.25 * self.life_cycles) / 30
+    
+    def set_grant(self, grant):
+        self.grant_reduction = self.price * 0.5 if grant else 0
 
     def get_real_price(self) -> float:
         return self.price - self.grant_reduction
@@ -79,3 +82,7 @@ class Battery:
 
     def charging_per_segment(self):
         return round(self.charging_per_hour / 4, 3)
+    def __str__(self):
+        return (f"Battery(price={self.price}, capacity={self.capacity}, "
+                f"efficiency={self.efficiency}, life_cycles={self.life_cycles}, "
+                f"grant_reduction={self.grant_reduction})")
