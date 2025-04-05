@@ -32,4 +32,3 @@ def generate_energy_usage_days(total_usage=7.5, days=360):
         # Generate past date string (YYYY-MM-DD)
         day = (datetime.now() - timedelta(days=i-1)).strftime("%Y-%m-%d")
         generate_energy_usage(day, total_usage=total_usage)
-    

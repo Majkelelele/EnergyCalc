@@ -28,7 +28,8 @@ class EnergyRequest(BaseModel):
 class LoadingRequest(BaseModel):
     provider: str = "enea"
     load_to_sell: bool = True
-    date: str
+    start_date: str
+    end_date: str
 
 class CSVFileNameRequest(BaseModel):
     date: str
@@ -101,28 +102,34 @@ def process_csv(request: LoadingRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/api/benchmark_algos_cost")
-def process_csv(request: LoadingRequest):
-    f_price =  "../data_months/tge/" + request.date + ".csv"
-    f_usage =  "../data_months/usage/" + request.date + ".csv"
+def benchmark_algos_cost(request: LoadingRequest):
+    res_algos_list = []
+    res_benchmark_list = []
+    for single_date in pd.date_range(request.start_date, request.end_date, freq='D'):
+        f_price =  "../data_months/tge/" + str(single_date.date()) + ".csv"
+        f_usage =  "../data_months/usage/" + str(single_date.date()) + ".csv"
+        print(f_usage)
+        # Read the CSV file
+        try:
+            # for b in BATTERIES:
+            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, BATTERIES[2], request.load_to_sell, request.provider)
+            
+            # TODO
+            # if res_algos is negative it means that we acutally could earn money, not only save money,
+            # to add is check how much in theory can be earned
+            
+            res_algos_list.append(res_algos)
+            res_benchmark_list.append(res_benchmark)
 
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="File not found")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-    # Read the CSV file
-    try:
-        # for b in BATTERIES:
-        res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, BATTERIES[0], request.load_to_sell, request.provider)        
-
-        # TODO
-        # if res_algos is negative it means that we acutally could earn money, not only save money,
-        # to add is check how much in theory can be earned
-        return {
-            "res_algos": res_algos,
-            "res_benchmark": res_benchmark,
-        }
-    
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="File not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "res_algos": res_algos_list,
+        "res_benchmark": res_benchmark_list,
+    }
     
     
 
