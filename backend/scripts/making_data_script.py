@@ -59,7 +59,7 @@ def generate_energy_usage(day, total_usage=7.5):
     base_usage = np.random.uniform(0.01, 0.07, num_periods)
 
     morning_peak = range(6 * 4, 9 * 4)
-    evening_peak = range(17 * 4, 22 * 4)
+    evening_peak = range(19 * 4, 22 * 4)
     night_low = range(0, 5 * 4)
 
     for i in morning_peak:
@@ -125,4 +125,4 @@ def plot_usage(file_path):
     plt.show()
 
 # generate_energy_usage_days()
-# plot_usage("../data_months/usage/2024-07-09.csv")
+# plot_usage("../data_months/usage/2024-12-09.csv")
