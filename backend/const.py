@@ -34,22 +34,22 @@ CURRENT_A = 5 / 1000
 # 0,095 zł/kWh (składnik kosztowo-marżowy, w tym koszty bilansowania handlowego);
 B_ENEA = 0.095
 K_PGE = 0.0812
-SC_TAUTRON = 0.892
+SC_TAUTRON = 0.0892
 Wk_ENERGA = 0.108
 
 VAT = 0.23
 
-ENEA_MONTHLY_COST = 18.45
+ENEA_MONTHLY_COST = 9.99
 ENERGA_MONTHLY_COST = 9.99
 PGE_MONTHLY_COST = 49.90
 TAURON_MONTHLY_COST = 0
-
 
 
 PGE_STATIC_KWH = 0.62
 ENEA_STATIC_KWH = 0.62
 TAURON_STATIC_KWH = 0.62
 ENERGA_STATIC_KWH = 0.62
+
 ENEA_MONTHLY_COST_STATIC = 0
 ENERGA_MONTHLY_COST_STATIC = 0
 PGE_MONTHLY_COST_STATIC = 0
@@ -57,6 +57,8 @@ TAURON_MONTHLY_COST_STATIC = 0
 
 PGE_MIN_PRICE_CAP = 0
 TAURON_MIN_PRICE_CAP = 0.005
+
+ADDITIONAL_HELPER_SELLING = 1.23
 
 # TODO G13 sligthly different for summer and winter 
 # https://akademia-fotowoltaiki.pl/tauron/#:~:text=Taryfa%20G13%20%E2%80%93%20taryfa%20przedpo%C5%82udniowa%20(%C5%9Brednia,%E2%80%93%207.00%2C%20a%20tak%C5%BCe%20weekendy

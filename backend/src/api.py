@@ -77,16 +77,20 @@ def process_csv(request: CSVFileNameRequest):
 def process_csv(request: LoadingRequest):
     f_price =  "../data_months/tge/" + request.date + ".csv"
     f_usage =  "../data_months/usage/" + request.date + ".csv"
+    f_rce =  "../data_months/rce/" + request.date + ".csv"
+
     prices = np.array((pd.read_csv(f_price).values).flatten())
 
     # usage already in kWh
     usage = np.array((pd.read_csv(f_usage).values).flatten())
+    sell_prices = np.array((pd.read_csv(f_rce).values).flatten())
+
 
 
     # Read the CSV file
     try:
         # for b in BATTERIES:
-        battery_load_time, grid_time, buy, sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, BATTERIES[2], request.load_to_sell, request.provider)
+        battery_load_time, grid_time, buy, sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
             
 
         battery_time = battery_load_time.tolist()
@@ -108,11 +112,12 @@ def benchmark_algos_cost(request: LoadingRequest):
     for single_date in pd.date_range(request.start_date, request.end_date, freq='D'):
         f_price =  "../data_months/tge/" + str(single_date.date()) + ".csv"
         f_usage =  "../data_months/usage/" + str(single_date.date()) + ".csv"
+        f_rce =  "../data_months/rce/" + str(single_date.date()) + ".csv"
         print(f_usage)
         # Read the CSV file
         try:
             # for b in BATTERIES:
-            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, BATTERIES[2], request.load_to_sell, request.provider)
+            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, f_rce, BATTERIES[2], request.load_to_sell, request.provider)
             
             # TODO
             # if res_algos is negative it means that we acutally could earn money, not only save money,
