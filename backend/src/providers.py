@@ -16,7 +16,6 @@ def calculate_enea_prices(prices, sell_prices, tariff = "G11", static_prices=Fal
         prices = np.full(SIZE, ENEA_STATIC_KWH) + tarifs
         return prices, sell_prices, ENEA_MONTHLY_COST_STATIC
     
-    print(f"not static !!!!")
 
     netto_prices = prices + CURRENT_A + B_ENEA
     buy_prices = netto_prices * (1 + VAT) + tarifs
