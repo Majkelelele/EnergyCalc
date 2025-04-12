@@ -1,5 +1,6 @@
 from backend.const import CURRENT_A, B_ENEA, VAT, ENEA_MONTHLY_COST, ENERGA_MONTHLY_COST, PGE_MONTHLY_COST, TAURON_MONTHLY_COST, K_PGE, SC_TAUTRON, Wk_ENERGA, ENEA_STATIC_KWH, PGE_STATIC_KWH, TAURON_STATIC_KWH, ENERGA_STATIC_KWH, ENEA_MONTHLY_COST_STATIC, ENERGA_MONTHLY_COST_STATIC, TAURON_MONTHLY_COST_STATIC, PGE_MONTHLY_COST_STATIC, SIZE, PGE_MIN_PRICE_CAP, TAURON_MIN_PRICE_CAP, G13_TAURON, G11_TAURON, G12_TAURON, ADDITIONAL_HELPER_SELLING
 import numpy as np
+import pandas as pd
 
 def calculate_enea_prices(prices, sell_prices, tariff = "G11", static_prices=False):
     tarifs = 0
@@ -67,7 +68,7 @@ def calculate_pge_prices(prices, sell_prices, tariff = "G11", static_prices=Fals
     
     return buy_prices, sell_prices, PGE_MONTHLY_COST
 
-def calculate_tauron_prices(prices, sell_prices, tariff = "G11", static_prices=False):
+def calculate_tauron_prices(prices, sell_prices, tariff = "G11", static_prices=False, date="2025-03-03"):
     tarifs = 0
     if tariff == "G11":
         tarifs = G11_TAURON
@@ -75,8 +76,11 @@ def calculate_tauron_prices(prices, sell_prices, tariff = "G11", static_prices=F
         tarifs = G12_TAURON
     elif tariff == "G13":
         tarifs = G13_TAURON
+    elif tariff == "G14":
+        file_path = f"../data_months/kompas_energetyczny/{date}.csv"
+        tarifs = np.array((pd.read_csv(file_path).values).flatten())
     else:
-        pass  # todo g14
+       print("wrong tarrif!!!!")
 
     if static_prices:
         prices = np.full(SIZE, TAURON_STATIC_KWH) + tarifs

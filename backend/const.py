@@ -63,13 +63,19 @@ ADDITIONAL_HELPER_SELLING = 1.23
 # TODO G13 sligthly different for summer and winter 
 # https://akademia-fotowoltaiki.pl/tauron/#:~:text=Taryfa%20G13%20%E2%80%93%20taryfa%20przedpo%C5%82udniowa%20(%C5%9Brednia,%E2%80%93%207.00%2C%20a%20tak%C5%BCe%20weekendy
 
-# G14_TAURON
+G14_TAURON = {
+    0:0.011,
+    1:0.047,
+    2:0.35,
+    3:2.35,
+    }
 G13_TAURON = fill_quarters_G13(0.04,0.24, 0.42)
 G12_TAURON = fill_quarters_G12(0.08, 0.36)
 G11_TAURON = np.full(SIZE, 0.32)
 
+
 BATTERIES = [
-        Battery(
+    Battery(
         price=4800, 
         capacity=2.88, 
         DoD=0.9, 
@@ -93,4 +99,12 @@ BATTERIES = [
         life_cycles=4000,
         grant_reduction=True
     ),
-    ]
+    Battery(
+        price=9800, 
+        capacity=15, 
+        DoD=0.9, 
+        efficiency=0.95, 
+        life_cycles=4000,
+        grant_reduction=False
+    ),
+]

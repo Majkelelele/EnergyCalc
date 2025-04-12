@@ -116,6 +116,7 @@ def best_algos_ever(buy_prices: np.ndarray, sell_prices, usages: np.ndarray, bat
             grid_time[i] += usage
             
         heapq.heappush(info_list, Info(loading_per_segment, battery_cost_per_kwh + price, i))
+        
     final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
         
     if load_to_sell:
