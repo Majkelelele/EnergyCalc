@@ -72,7 +72,6 @@ def benchmark(
     total_cost += (battery_loading * (buy_prices + cost_per_kwh)).sum()
     total_cost += (buy * (buy_prices + cost_per_kwh)).sum()
     total_cost -= (sell * sell_prices).sum() 
-    
 
     return total_cost
 
@@ -223,7 +222,8 @@ def simulate_only_static_saving_one_bat(battery: Battery, load_to_sell=False, pr
    
     rce_prices_pattern = "../data_months/rce/*.csv"
     rce_prices_files = sorted(glob.glob(rce_prices_pattern))
-
+    avg_max_cost = 0
+    avg_min_cost = 1000000
     for tariff in tarifs:
         results_only_grid = []
         results_michal = []
@@ -232,8 +232,17 @@ def simulate_only_static_saving_one_bat(battery: Battery, load_to_sell=False, pr
             results_michal.append(res_algos)
             results_only_grid.append(res_benchmark)
         months = float(len(prices_files)) / 30.0
-        print(f"average cost per month for tarif {tariff} = {sum(results_michal) / months}")
-        print(f"benchmark = {sum(results_only_grid) / months}")
+        algos_cost = sum(results_michal)
+        benchmark_cost = sum(results_only_grid)
+        avg_max_cost = max(avg_max_cost, benchmark_cost/ months)
+        avg_min_cost = min(avg_min_cost, algos_cost/ months)
+        print(f"average cost per month for tarif {tariff} = {algos_cost/ months}")
+        print(f"benchmark = {benchmark_cost/ months}")
+    profit = avg_max_cost - avg_min_cost
+    print(f"avg min cost = {avg_min_cost}, avg max_cost = {avg_max_cost}, profit = {profit}")
+    print(f"month to return =  {battery.get_real_price() / profit}")
+    print("")
+    
 
 def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11", "G12", "G13"], load_to_sell=False):
     for i, bat in enumerate(BATTERIES):
@@ -243,5 +252,5 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
 
     
 if __name__ == "__main__":
-    # simulate_only_static_saving(provider="enea", daily_usage=7, tarifs=["G11", "G12", "G13"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False)
+    # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
+    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G14", staying_static=False)

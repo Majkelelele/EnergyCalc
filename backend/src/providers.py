@@ -11,7 +11,7 @@ def calculate_enea_prices(prices, sell_prices, tariff = "G11", static_prices=Fal
     elif tariff == "G13":
         tarifs = G13_TAURON
     else:
-        pass  # todo g14
+        print(f"tariff = {tariff} is not possible for enea")
 
     if static_prices:
         prices = np.full(SIZE, ENEA_STATIC_KWH) + tarifs
@@ -34,7 +34,8 @@ def calculate_energa_prices(prices, sell_prices, tariff = "G11", static_prices=F
     elif tariff == "G13":
         tarifs = G13_TAURON
     else:
-        pass  # todo g14
+        print(f"tariff = {tariff} is not possible for enea")
+
 
     if static_prices:
         prices = np.full(SIZE, ENERGA_STATIC_KWH) + tarifs
@@ -55,7 +56,8 @@ def calculate_pge_prices(prices, sell_prices, tariff = "G11", static_prices=Fals
     elif tariff == "G13":
         tarifs = G13_TAURON
     else:
-        pass  # todo g14
+        print(f"tariff = {tariff} is not possible for enea")
+
 
     if static_prices:
         prices = np.full(SIZE, PGE_STATIC_KWH) + tarifs
