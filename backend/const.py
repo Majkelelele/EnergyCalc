@@ -60,6 +60,8 @@ TAURON_MIN_PRICE_CAP = 0.005
 
 ADDITIONAL_HELPER_SELLING = 1.23
 
+WITHDRAWABLE_RATE = 0.2
+
 # TODO G13 sligthly different for summer and winter 
 # https://akademia-fotowoltaiki.pl/tauron/#:~:text=Taryfa%20G13%20%E2%80%93%20taryfa%20przedpo%C5%82udniowa%20(%C5%9Brednia,%E2%80%93%207.00%2C%20a%20tak%C5%BCe%20weekendy
 
@@ -81,7 +83,7 @@ BATTERIES = [
         DoD=0.9, 
         efficiency=0.95, 
         life_cycles=6000,
-        grant_reduction=True
+        is_grant_reduction=True
     ),
     Battery(
         price=8000, 
@@ -89,7 +91,7 @@ BATTERIES = [
         DoD=0.95, 
         efficiency=0.98, 
         life_cycles=4000,
-        grant_reduction=True
+        is_grant_reduction=True
     ),
     Battery(
         price=14350, 
@@ -97,14 +99,14 @@ BATTERIES = [
         DoD=0.9, 
         efficiency=0.95, 
         life_cycles=4000,
-        grant_reduction=True
+        is_grant_reduction=True
     ),
-    Battery(
-        price=9800, 
-        capacity=15, 
-        DoD=0.9, 
-        efficiency=0.95, 
-        life_cycles=4000,
-        grant_reduction=False
-    ),
+    # Battery(
+    #     price=9800, 
+    #     capacity=15, 
+    #     DoD=0.9, 
+    #     efficiency=0.95, 
+    #     life_cycles=4000,
+    #     is_grant_reduction=False
+    # ),
 ]

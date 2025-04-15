@@ -38,7 +38,7 @@ class CSVFileNameRequest(BaseModel):
 def api_call(request: EnergyRequest):
     batteries, avg_profits, expected_months_to_returns, expected_months_cycles = simulate(
         do_print=False, grant=request.grant_applicable, daily_usage=request.daily_usage,
-        provider=request.provider, load_to_sell=request.load_to_sell
+        provider=request.provider, load_to_sell=request.load_to_sell, tariff="G13", starting_tariff="G11", solar_avaialable=False
     )
 
     return {
@@ -90,6 +90,10 @@ def process_csv(request: LoadingRequest):
     # Read the CSV file
     try:
         # for b in BATTERIES:
+        # battery_load_time - (96 array) when and how much loading only to use later
+        # grid_time - (96 array) when and how much we use energy directly from grid - only usage
+        # buy - (96 array) when and how much buying only to sell later
+        # sell - (96 array) when and how much selling 
         battery_load_time, grid_time, buy, sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
             
 

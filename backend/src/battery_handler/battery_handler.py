@@ -11,7 +11,7 @@ class Battery:
             DoD: float, 
             efficiency: float,
             life_cycles: int,
-            grant_reduction: bool = False,
+            is_grant_reduction: bool = False,
             charge_level: float = 0.0,
             socket_amperage: int = DEFAULT_AMPERAGE,
             socket_voltage: int = DEFAULT_VOLTAGE,
@@ -19,7 +19,7 @@ class Battery:
             ):
         self.price = price
         self.capacity = capacity
-        self.grant_reduction = self.price * 0.5 if grant_reduction else 0
+        self.grant_reduction = self.price * 0.5 if is_grant_reduction else 0
 
         # Battery current charge level in kWh
         self.charge_level = charge_level
@@ -83,6 +83,6 @@ class Battery:
     def charging_per_segment(self):
         return round(self.charging_per_hour / 4, 3)
     def __str__(self):
-        return (f"Battery(price={self.price}, capacity={self.capacity}, "
+        return (f"Battery(price={self.get_real_price()}, capacity={self.capacity}, "
                 f"efficiency={self.efficiency}, life_cycles={self.life_cycles}, "
                 f"grant_reduction={self.grant_reduction})")

@@ -8,6 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from dateutil.relativedelta import relativedelta
+
 
 from get_weather_data import get_irradiation_data
 
@@ -158,8 +160,13 @@ class PVModel:
         # Convert the series into a DataFrame with a proper column name
         df = pd.DataFrame({'Solar Output (kW)': self.ac_series.values / 1000})
         
+        
         # Iterate over unique dates and save separate CSV files
         for date, group in df.groupby(self.ac_series.index.date):
+            new_date = date + relativedelta(years=2)
+            # Format back to "year:month:day"
+            date = new_date.strftime("%Y-%m-%d")
+            print(f"for date = {date}, energy generated =  {sum(group.values)}")
             filename = os.path.join(self.csv_output_path, f"{date}.csv")
             group.to_csv(filename, index=False, header=True)
 
@@ -192,7 +199,7 @@ def function_for_michal_zmyslony(
     module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
     inverter_library: str = 'CECInverter',
     inverter_name: str = 'ABB__PVI_3_0_OUTD_S_US__208V_',
-    modules_per_string: int = 4,
+    modules_per_string: int = 3,
     strings_per_inverter: int = 1,
     temperature_model: str = 'open_rack_glass_glass',
     # PVModel parameters
@@ -254,7 +261,7 @@ if __name__ == "__main__":
         inverter_library='CECInverter',
         inverter_name='ABB__PVI_3_0_OUTD_S_US__208V_',
         modules_per_string=2,
-        strings_per_inverter=4,
+        strings_per_inverter=3,
         temperature_model='open_rack_glass_glass',
     )
     pv_system = PVModel(
@@ -271,4 +278,4 @@ if __name__ == "__main__":
     # Run the model, process the data, and plot (if desired)
     # pv_system.run_all()
     
-    function_for_michal_zmyslony(data_date_range=("2023-01-27", "2023-03-28"))
+    function_for_michal_zmyslony(data_date_range=("2022-07-01", "2023-04-02"))

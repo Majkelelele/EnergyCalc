@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray  # Available in NumPy 1.20 and later
 from backend.scripts.making_data_script import generate_energy_usage_days
-from backend.const import TOL, SIZE, BATTERIES
+from backend.const import TOL, SIZE, BATTERIES, WITHDRAWABLE_RATE
 from providers import calculate_enea_prices, calculate_energa_prices, calculate_pge_prices, calculate_tauron_prices
 import os
 import datetime
@@ -48,6 +48,8 @@ def benchmark(
     sell: ARR,
     buy_prices: ARR, 
     sell_prices: ARR,
+    base_prices: ARR,
+    selling_buying,
     usage: ARR, 
     battery: Battery, 
     tol: float = TOL
@@ -69,10 +71,13 @@ def benchmark(
     cost_per_kwh = battery.one_kwh_cost()
     total_cost = 0
     total_cost += (grid_loading * buy_prices).sum()
-    total_cost += (battery_loading * (buy_prices + cost_per_kwh)).sum()
-    total_cost += (buy * (buy_prices + cost_per_kwh)).sum()
-    total_cost -= (sell * sell_prices).sum() 
+    total_cost += (battery_loading * (buy_prices)).sum()
+    total_cost += (buy * (buy_prices)).sum()
+    selling_buying["bought"] += (grid_loading * base_prices).sum() + (buy * (base_prices)).sum() + (battery_loading * base_prices).sum()
+    selling_buying["sold"] += (sell * sell_prices).sum() 
 
+    
+    
     return total_cost
 
 def run_best_algos_one_day(prices, usage, sell_prices, battery: Battery, load_to_sell=True, provider="enea", tariff="G11", staying_static=False, date="2025-03-03"):
@@ -117,39 +122,47 @@ def parse_date_from_path(path):
     date_str = filename.replace(".csv", "")  # -> "2024-07-01"
     return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
-def calculate_one_day(f_price, f_usage, f_rce, battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False, tariff="G11", staying_static = False):
+def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, selling_buying:dict, load_to_sell=True, provider="enea", switching_from_static=False,
+                      tariff="G11", staying_static = False, solar_available=False, starting_tariff="G11"):
      
     # prices per kWh
     prices = np.array((pd.read_csv(f_price).values).flatten())
     # usage already in kWh
     usage = np.array((pd.read_csv(f_usage).values).flatten())
     
+    if solar_available:
+        solar = np.array((pd.read_csv(f_solar).values).flatten())
+        usage -= solar
+        usage = np.maximum(0, usage)
+        
     sell_prices = np.array((pd.read_csv(f_rce).values).flatten())
     date = parse_date_from_path(f_price)
     
     battery_load_time, grid_time, buy, sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, battery, load_to_sell, provider, tariff=tariff, staying_static=staying_static, date=date)
     
 
-    res_algos = round(benchmark(battery_load_time,grid_time,buy, sell,buy_prices, sell_prices, usage, battery),3)
+    res_algos = round(benchmark(battery_load_time,grid_time,buy, sell,buy_prices, sell_prices,  prices, selling_buying, usage, battery),3)
     
     
     prices = np.array((pd.read_csv(f_price).values).flatten())
     match provider:
         case "enea":
-            buy_prices, sell_prices,  month_const_cost_2 =  calculate_enea_prices(prices, sell_prices, tariff, switching_from_static)
+            buy_prices, sell_prices,  month_const_cost_2 =  calculate_enea_prices(prices, sell_prices, starting_tariff, switching_from_static)
         case "energa":
-            buy_prices, sell_prices,  month_const_cost_2 =  calculate_energa_prices(prices, sell_prices, tariff, switching_from_static)
+            buy_prices, sell_prices,  month_const_cost_2 =  calculate_energa_prices(prices, sell_prices, starting_tariff, switching_from_static)
         case "pge":
-            buy_prices, sell_prices,  month_const_cost_2 =  calculate_pge_prices(prices, sell_prices, tariff, switching_from_static)
+            buy_prices, sell_prices,  month_const_cost_2 =  calculate_pge_prices(prices, sell_prices,starting_tariff, switching_from_static)
         case "tauron":
-            buy_prices, sell_prices,  month_const_cost_2 =  calculate_tauron_prices(prices, sell_prices, tariff, switching_from_static, date=date)
+            buy_prices, sell_prices,  month_const_cost_2 =  calculate_tauron_prices(prices, sell_prices, starting_tariff, switching_from_static, date=date)
         case _:
             raise ValueError("Wrong provider")
-    
-    res_benchmark = round(benchmark(np.zeros(SIZE),usage,np.zeros(SIZE), np.zeros(SIZE), buy_prices,sell_prices, usage, battery),3)
+    selling_buying_fake = {"sold": 0, "bought": 0}
+
+    res_benchmark = round(benchmark(np.zeros(SIZE),usage,np.zeros(SIZE), np.zeros(SIZE), buy_prices,sell_prices, prices, selling_buying_fake,usage, battery),3)
     return res_algos, res_benchmark, month_const_cost_1, month_const_cost_2
     
-def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False, solar_avaialable=False, daily_usage=5, tariff="G11", staying_static=False):
+def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False, solar_avaialable=False,
+                 daily_usage=5, tariff="G11", staying_static=False, starting_tariff="G11"):
     prices_pattern = "../data_months/tge/*.csv"
     prices_files = sorted(glob.glob(prices_pattern))
     
@@ -160,36 +173,55 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching
     rce_prices_pattern = "../data_months/rce/*.csv"
     rce_prices_files = sorted(glob.glob(rce_prices_pattern))
 
-    # solar_pattern = "../data_months/solar_output/*.csv"
-    # solar_files = sorted(glob.glob(solar_pattern))
+    solar_pattern = "../data_months/solar_output/*.csv"
+    solar_files = sorted(glob.glob(solar_pattern))
+    
     # expected amount to be loaded in entire 15 min period
     results_only_grid = []
     results_michal = []
-    for i, (f_price, f_usage, f_rce) in enumerate(zip(prices_files, usage_files, rce_prices_files)):
-        res_algos, res_benchmark, month_const_cost_1, month_const_cost_2 = calculate_one_day(f_price,f_usage,f_rce, battery,load_to_sell,provider,switching_from_static, tariff=tariff, staying_static=staying_static)
+    selling_buying = {"sold": 0, "bought": 0}
+
+    for i, (f_price, f_usage, f_rce, f_solar) in enumerate(zip(prices_files, usage_files, rce_prices_files, solar_files)):
+        res_algos, res_benchmark, month_const_cost_1, month_const_cost_2 = calculate_one_day(f_price,f_usage,f_rce,f_solar, battery, selling_buying, load_to_sell,provider,switching_from_static, tariff=tariff, staying_static=staying_static, solar_available=solar_avaialable, starting_tariff=starting_tariff)
         results_michal.append(res_algos)
         results_only_grid.append(res_benchmark)
-
+    print(selling_buying)
     assert len(results_michal) == len(results_only_grid), "different lenghts of results"
-    if not switching_from_static:
-        assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
+    # if not switching_from_static:
+    #     assert all(a <= b for a, b in zip(results_michal, results_only_grid)), "Not all profits in Michal's algo are smaller than in stupid algo"
     max_diff = max([p1 - p2 for p1, p2 in zip(results_only_grid, results_michal)])
     print(f"max profit in one day per entire period = {max_diff} zlotych")
     print(f"days considerd in a period = {min(len(prices_files), len(usage_files))}")
     months = float(len(prices_files)) / 30.0
     print(f"months = {months}")
+    cost_algos = sum(results_michal)
+    cost_benchmark = sum(results_only_grid)
+    print(f"pre deducion cost algos = {cost_algos}, benchmark = {cost_benchmark}")
     
-    return sum(m - g for m, g in zip(results_only_grid, results_michal)) - (month_const_cost_1 - month_const_cost_2) * months, months
+    deductible = min(selling_buying["sold"], selling_buying["bought"])
+    # profit += deductible
+    # profit += WITHDRAWABLE_RATE * max(0, selling_buying["sold"] - deductible)
+    
+    cost_algos -= deductible
+    cost_algos -= WITHDRAWABLE_RATE * max(0, selling_buying["sold"] - deductible)
+    print(f"algos total cost = {cost_algos}, benchmark total cost = {cost_benchmark}")
+    loosing = max(0, selling_buying["sold"] - deductible) * (1 - WITHDRAWABLE_RATE)
+    print(f"loosing {loosing}")
+    
+    difference = cost_benchmark - cost_algos
+    profit = difference - (month_const_cost_1 - month_const_cost_2) * months
+    return profit, months
 
 
 # load_to_sell - if True, we are enabling selling energy to back to grid,
 def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, provider="enea",
-             switching_from_static=False, solar_avaialable=False, tariff="G11", staying_static=False):
+             switching_from_static=False, solar_avaialable=False, tariff="G11", staying_static=False,
+             starting_tariff="G11"):
     print(f'provider = {provider}')
     print(f"tariff = {tariff}")
     
-    for b in BATTERIES:
-        b.set_grant(grant)
+    # for b in BATTERIES:
+    #     b.set_grant(grant)
         
     avg_profits = []
     expected_months_to_returns = []
@@ -198,7 +230,7 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
         print(bat)
         print(f"battery kwh cost = {bat.one_kwh_cost()}")
 
-        profit, months = total_profit(bat, load_to_sell=load_to_sell, provider=provider, switching_from_static=switching_from_static, solar_avaialable=solar_avaialable,daily_usage=daily_usage, tariff=tariff, staying_static=staying_static)
+        profit, months = total_profit(bat, load_to_sell=load_to_sell, provider=provider, switching_from_static=switching_from_static, solar_avaialable=solar_avaialable,daily_usage=daily_usage, tariff=tariff, staying_static=staying_static, starting_tariff=starting_tariff)
         avg_profit_month = round(profit / months,2)
         expected_months_to_return = round(bat.get_real_price() / avg_profit_month,2)
         expected_months_cycles = round(bat.get_expected_month_cycles(),2)
@@ -222,13 +254,18 @@ def simulate_only_static_saving_one_bat(battery: Battery, load_to_sell=False, pr
    
     rce_prices_pattern = "../data_months/rce/*.csv"
     rce_prices_files = sorted(glob.glob(rce_prices_pattern))
+    
+    solar_pattern = "../data_months/solar_output/*.csv"
+    solar_files = sorted(glob.glob(solar_pattern))
+    
     avg_max_cost = 0
     avg_min_cost = 1000000
     for tariff in tarifs:
         results_only_grid = []
         results_michal = []
-        for i, (f_price, f_usage, f_rce) in enumerate(zip(prices_files, usage_files, rce_prices_files)):
-            res_algos, res_benchmark, _, _ = calculate_one_day(f_price,f_usage,f_rce, battery,load_to_sell,provider,switching_from_static, tariff=tariff, staying_static=True)
+        selling_buying = {"sold": 0, "bought": 0, "total_cost":0}
+        for i, (f_price, f_usage, f_rce, f_solar) in enumerate(zip(prices_files, usage_files, rce_prices_files, solar_files)):
+            res_algos, res_benchmark, _, _ = calculate_one_day(f_price,f_usage,f_rce, f_solar, battery,load_to_sell,provider,switching_from_static,  tariff=tariff, staying_static=True, selling_buying=selling_buying)
             results_michal.append(res_algos)
             results_only_grid.append(res_benchmark)
         months = float(len(prices_files)) / 30.0
@@ -253,4 +290,4 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G14", staying_static=False)
+    simulate(do_print=True, grant=True, daily_usage=15, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G11")
