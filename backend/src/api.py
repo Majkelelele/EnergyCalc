@@ -85,23 +85,40 @@ def process_csv(request: LoadingRequest):
     usage = np.array((pd.read_csv(f_usage).values).flatten())
     sell_prices = np.array((pd.read_csv(f_rce).values).flatten())
 
-
-
     # Read the CSV file
     try:
         # for b in BATTERIES:
-        # battery_load_time - (96 array) when and how much loading only to use later
+        # load_to_use - (96 array) when and how much loading only to use later
         # grid_time - (96 array) when and how much we use energy directly from grid - only usage
-        # buy - (96 array) when and how much buying only to sell later
-        # sell - (96 array) when and how much selling 
-        battery_load_time, grid_time, buy, sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
+        # load_to_sell - (96 array) when and how much buying only to sell later
+        # unload_to_sell - (96 array) when and how much selling 
+        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
             
+        unload_to_use = usage - grid_time
 
-        battery_time = battery_load_time.tolist()
-        grid_time = grid_time.tolist()
+        time = load_to_use.tolist()
+
+        state_dict = {
+            'unload': 0,
+            'load': 1,
+            'idle': 2,
+        }
+
+        battery_state = []
+
+        for i in range(96):
+            state = 0
+            if (load_to_use[i] > 0 or load_to_sell[i] > 0):
+                state = state_dict["load"]
+            elif (unload_to_use[i] > 0 or unload_to_sell[i] > 0):
+                state = state_dict["unload"]
+            else:
+                state = state_dict["idle"]
+            battery_state.append(state)
+        print(battery_state)
+        
         return {
-            "battery_time": battery_time,
-            "grid_time": grid_time,
+            "data": battery_state,
         }
     
     except FileNotFoundError:
