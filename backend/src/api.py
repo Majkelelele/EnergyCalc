@@ -24,6 +24,8 @@ class EnergyRequest(BaseModel):
     grant_applicable: bool = False
     provider: str = "enea"
     load_to_sell: bool = True
+    starting_tarrif: str = "G11"
+    tariff: str = "G13"
     
 class LoadingRequest(BaseModel):
     provider: str = "enea"
@@ -38,7 +40,7 @@ class CSVFileNameRequest(BaseModel):
 def api_call(request: EnergyRequest):
     batteries, avg_profits, expected_months_to_returns, expected_months_cycles = simulate(
         do_print=False, grant=request.grant_applicable, daily_usage=request.daily_usage,
-        provider=request.provider, load_to_sell=request.load_to_sell, tariff="G13", starting_tariff="G11", solar_avaialable=False
+        provider=request.provider, load_to_sell=request.load_to_sell, tariff=request.tariff, starting_tariff=request.starting_tarrif, solar_avaialable=False
     )
 
     return {
