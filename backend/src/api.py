@@ -133,16 +133,19 @@ def benchmark_algos_cost(request: LoadingRequest):
     res_algos_list = []
     res_benchmark_list = []
     for single_date in pd.date_range(request.start_date, request.end_date, freq='D'):
+        
         f_price =  "../data_months/tge/" + str(single_date.date()) + ".csv"
         f_usage =  "../data_months/usage/" + str(single_date.date()) + ".csv"
         f_rce =  "../data_months/rce/" + str(single_date.date()) + ".csv"
         f_solar =  "../data_months/solar_output/" + str(single_date.date()) + ".csv"
+        print(f_solar)
 
         print(f_usage)
         # Read the CSV file
         try:
             # for b in BATTERIES:
-            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, f_rce, f_solar, BATTERIES[2], request.load_to_sell, request.provider)
+            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, f_rce, f_solar, battery=BATTERIES[2], load_to_sell=request.load_to_sell,
+                                                               provider=request.provider,tariff="G13",starting_tariff="G11")
             
             # TODO
             # if res_algos is negative it means that we acutally could earn money, not only save money,
