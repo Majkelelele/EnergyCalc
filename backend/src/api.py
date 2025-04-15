@@ -24,6 +24,8 @@ class EnergyRequest(BaseModel):
     grant_applicable: bool = False
     provider: str = "enea"
     load_to_sell: bool = True
+    starting_tarrif: str = "G11"
+    tariff: str = "G13"
     
 class LoadingRequest(BaseModel):
     provider: str = "enea"
@@ -38,7 +40,7 @@ class CSVFileNameRequest(BaseModel):
 def api_call(request: EnergyRequest):
     batteries, avg_profits, expected_months_to_returns, expected_months_cycles = simulate(
         do_print=False, grant=request.grant_applicable, daily_usage=request.daily_usage,
-        provider=request.provider, load_to_sell=request.load_to_sell, tariff="G13", starting_tariff="G11", solar_avaialable=False
+        provider=request.provider, load_to_sell=request.load_to_sell, tariff=request.tariff, starting_tariff=request.starting_tarrif, solar_avaialable=False
     )
 
     return {
@@ -134,11 +136,13 @@ def benchmark_algos_cost(request: LoadingRequest):
         f_price =  "../data_months/tge/" + str(single_date.date()) + ".csv"
         f_usage =  "../data_months/usage/" + str(single_date.date()) + ".csv"
         f_rce =  "../data_months/rce/" + str(single_date.date()) + ".csv"
+        f_solar =  "../data_months/solar_output/" + str(single_date.date()) + ".csv"
+
         print(f_usage)
         # Read the CSV file
         try:
             # for b in BATTERIES:
-            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, f_rce, BATTERIES[2], request.load_to_sell, request.provider)
+            res_algos, res_benchmark, _, _ = calculate_one_day(f_price, f_usage, f_rce, f_solar, BATTERIES[2], request.load_to_sell, request.provider)
             
             # TODO
             # if res_algos is negative it means that we acutally could earn money, not only save money,

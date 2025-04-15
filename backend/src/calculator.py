@@ -122,7 +122,7 @@ def parse_date_from_path(path):
     date_str = filename.replace(".csv", "")  # -> "2024-07-01"
     return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
-def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, selling_buying:dict, load_to_sell=True, provider="enea", switching_from_static=False,
+def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, selling_buying={"sold": 0, "bought": 0}, load_to_sell=True, provider="enea", switching_from_static=False,
                       tariff="G11", staying_static = False, solar_available=False, starting_tariff="G11"):
      
     # prices per kWh
@@ -290,4 +290,4 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=15, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G11")
+    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G13")
