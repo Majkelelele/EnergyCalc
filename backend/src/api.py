@@ -33,6 +33,11 @@ class LoadingRequest(BaseModel):
     start_date: str
     end_date: str
 
+class DateRequest(BaseModel):
+    provider: str = "enea"
+    load_to_sell: bool = True
+    date: str
+
 class CSVFileNameRequest(BaseModel):
     date: str
 
@@ -76,7 +81,7 @@ def process_csv(request: CSVFileNameRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/grid_time-battery_time")
-def process_csv(request: LoadingRequest):
+def process_csv(request: DateRequest):
     f_price =  "../data_months/tge/" + request.date + ".csv"
     f_usage =  "../data_months/usage/" + request.date + ".csv"
     f_rce =  "../data_months/rce/" + request.date + ".csv"
@@ -94,7 +99,7 @@ def process_csv(request: LoadingRequest):
         # grid_time - (96 array) when and how much we use energy directly from grid - only usage
         # load_to_sell - (96 array) when and how much buying only to sell later
         # unload_to_sell - (96 array) when and how much selling 
-        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
+        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider, date=request.date)
             
         unload_to_use = usage - grid_time
 
@@ -119,9 +124,9 @@ def process_csv(request: LoadingRequest):
             battery_state.append(state)
         print(battery_state)
         
-        return {
-            "data": battery_state,
-        }
+        return battery_state
+            
+
     
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
