@@ -33,6 +33,11 @@ class LoadingRequest(BaseModel):
     start_date: str
     end_date: str
 
+class DateRequest(BaseModel):
+    provider: str = "enea"
+    load_to_sell: bool = True
+    date: str
+
 class CSVFileNameRequest(BaseModel):
     date: str
 
@@ -52,22 +57,27 @@ def api_call(request: EnergyRequest):
     
 @app.post("/api/process-csv")
 def process_csv(request: CSVFileNameRequest):
-    file_path =  "../data_months/tge/" + request.date + ".csv"
+    dynamic_prices_path =  "../data_months/tge/" + request.date + ".csv"
+    static_prices_path = "../data_months/rce/" + request.date + ".csv"
 
-    # Read the CSV file
     try:
-        data = pd.read_csv(file_path)
+        dynamic_prices = pd.read_csv(dynamic_prices_path)
+        static_prices = pd.read_csv(static_prices_path)
 
         # Ensure the CSV contains the required 'Data' column
-        if 'Data' not in data.columns:
-            raise HTTPException(status_code=400, detail="'Data' column missing in CSV")
+        if 'Data' not in dynamic_prices.columns:
+            raise HTTPException(status_code=400, detail="'Data' column missing in dynamic prices CSV")
+        if 'Data' not in static_prices.columns:
+            raise HTTPException(status_code=400, detail="'Data' column missing in static prices CSV")
 
         # Convert the 'Data' column to a list for processing
-        data_list = data['Data'].tolist()
+        dynamic_list = dynamic_prices['Data'].tolist()
+        static_list = static_prices['Data'].tolist()
 
         # Process the data as needed (for demonstration, just return it)
         return {
-            "data": data_list
+            "dynamic": dynamic_list,
+            "static": static_list,
         }
     
     except FileNotFoundError:
@@ -76,7 +86,7 @@ def process_csv(request: CSVFileNameRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/grid_time-battery_time")
-def process_csv(request: LoadingRequest):
+def process_csv(request: DateRequest):
     f_price =  "../data_months/tge/" + request.date + ".csv"
     f_usage =  "../data_months/usage/" + request.date + ".csv"
     f_rce =  "../data_months/rce/" + request.date + ".csv"
@@ -94,7 +104,7 @@ def process_csv(request: LoadingRequest):
         # grid_time - (96 array) when and how much we use energy directly from grid - only usage
         # load_to_sell - (96 array) when and how much buying only to sell later
         # unload_to_sell - (96 array) when and how much selling 
-        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider)
+        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider, date=request.date)
             
         unload_to_use = usage - grid_time
 
@@ -119,9 +129,9 @@ def process_csv(request: LoadingRequest):
             battery_state.append(state)
         print(battery_state)
         
-        return {
-            "data": battery_state,
-        }
+        return battery_state
+            
+
     
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
