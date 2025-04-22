@@ -57,22 +57,27 @@ def api_call(request: EnergyRequest):
     
 @app.post("/api/process-csv")
 def process_csv(request: CSVFileNameRequest):
-    file_path =  "../data_months/tge/" + request.date + ".csv"
+    dynamic_prices_path =  "../data_months/tge/" + request.date + ".csv"
+    static_prices_path = "../data_months/rce/" + request.date + ".csv"
 
-    # Read the CSV file
     try:
-        data = pd.read_csv(file_path)
+        dynamic_prices = pd.read_csv(dynamic_prices_path)
+        static_prices = pd.read_csv(static_prices_path)
 
         # Ensure the CSV contains the required 'Data' column
-        if 'Data' not in data.columns:
-            raise HTTPException(status_code=400, detail="'Data' column missing in CSV")
+        if 'Data' not in dynamic_prices.columns:
+            raise HTTPException(status_code=400, detail="'Data' column missing in dynamic prices CSV")
+        if 'Data' not in static_prices.columns:
+            raise HTTPException(status_code=400, detail="'Data' column missing in static prices CSV")
 
         # Convert the 'Data' column to a list for processing
-        data_list = data['Data'].tolist()
+        dynamic_list = dynamic_prices['Data'].tolist()
+        static_list = static_prices['Data'].tolist()
 
         # Process the data as needed (for demonstration, just return it)
         return {
-            "data": data_list
+            "dynamic": dynamic_list,
+            "static": static_list,
         }
     
     except FileNotFoundError:
