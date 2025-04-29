@@ -94,7 +94,7 @@ def run_best_algos_one_day(prices, usage, sell_prices, battery: Battery, load_to
         case _:
             raise ValueError("Wrong provider")
     
-    battery_load_time, grid_time, buy, sell = best_algos_ever(buy_prices, sell_prices, usage,battery,load_to_sell=load_to_sell, provider=provider)
+    battery_load_time, grid_time, buy, sell = best_algos_ever(buy_prices, sell_prices, usage,battery,load_to_sell=load_to_sell)
     
     
     # time = np.arange(96)  # X-axis: 96 time steps (15 min intervals)
@@ -290,4 +290,4 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=15, load_to_sell=False, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G13")
+    simulate(do_print=True, grant=True, daily_usage=7, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G11")
