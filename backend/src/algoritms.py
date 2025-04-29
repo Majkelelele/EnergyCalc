@@ -99,7 +99,7 @@ def best_algos_ever(buy_prices: np.ndarray,
 
             # record flows
             battery_load_time[start_i] += to_move
-            battery_use_time[t]      += to_move
+            battery_use_time[t] += to_move
 
             # bump SoC on [start_i, t)
             soc[start_i:t] += to_move
