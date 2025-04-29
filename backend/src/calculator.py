@@ -276,4 +276,4 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=True, tariff="G13", staying_static=False, starting_tariff="G11")
+    simulate(do_print=True, grant=True, daily_usage=3, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=True, tariff="G13", staying_static=True, starting_tariff="G13")
