@@ -91,12 +91,16 @@ def process_csv(request: DateRequest):
     f_price =  "../data_months/tge/" + request.date + ".csv"
     f_usage =  "../data_months/usage/" + request.date + ".csv"
     f_rce =  "../data_months/rce/" + request.date + ".csv"
+    f_solar =  "../data_months/solar_output/" + request.date + ".csv"
+
 
     prices = np.array((pd.read_csv(f_price).values).flatten())
 
     # usage already in kWh
     usage = np.array((pd.read_csv(f_usage).values).flatten())
     sell_prices = np.array((pd.read_csv(f_rce).values).flatten())
+    solar_free = np.array((pd.read_csv(f_solar).values).flatten())
+
 
     # Read the CSV file
     try:
@@ -105,7 +109,7 @@ def process_csv(request: DateRequest):
         # grid_time - (96 array) when and how much we use energy directly from grid - only usage
         # load_to_sell - (96 array) when and how much buying only to sell later
         # unload_to_sell - (96 array) when and how much selling 
-        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, BATTERIES[2], request.load_to_sell, request.provider, date=request.date)
+        load_to_use, grid_time, load_to_sell, unload_to_sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, solar_free, BATTERIES[2], request.load_to_sell, request.provider, date=request.date)
             
         unload_to_use = usage - grid_time
 

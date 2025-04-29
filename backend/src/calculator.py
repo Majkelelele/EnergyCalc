@@ -80,7 +80,7 @@ def benchmark(
     
     return total_cost
 
-def run_best_algos_one_day(prices, usage, sell_prices, battery: Battery, load_to_sell=True, provider="enea", tariff="G11", staying_static=False, date="2025-03-03"):
+def run_best_algos_one_day(prices, usage, sell_prices, solar_free, battery: Battery, load_to_sell=True, provider="enea", tariff="G11", staying_static=False, date="2025-03-03"):
 
     match provider:
         case "enea":
@@ -94,27 +94,8 @@ def run_best_algos_one_day(prices, usage, sell_prices, battery: Battery, load_to
         case _:
             raise ValueError("Wrong provider")
     
-    battery_load_time, grid_time, buy, sell = best_algos_ever(buy_prices, sell_prices, usage,battery,load_to_sell=load_to_sell)
+    battery_load_time, grid_time, buy, sell = best_algos_ever(buy_prices, sell_prices, usage, battery, solar_free, load_to_sell=load_to_sell)
     
-    
-    # time = np.arange(96)  # X-axis: 96 time steps (15 min intervals)
-
-    # plt.figure(figsize=(14, 6))
-
-    # # Plot each series
-    # plt.plot(time, battery_load_time, label="Battery Load", color='green')
-    # plt.plot(time, grid_time, label="Grid Usage", color='blue')
-    # plt.plot(time, prices, label="Price", color='orange')
-
-    # # Decorations
-    # plt.title("Battery Load, Grid Usage & Prices Over a Day")
-    # plt.xlabel("Time (15-min intervals)")
-    # plt.ylabel("Value")
-    # plt.legend()
-    # plt.grid(True)
-    # plt.tight_layout()
-
-    # plt.show()
     return battery_load_time, grid_time, buy, sell, month_const_cost_1, buy_prices, sell_prices
 
 def parse_date_from_path(path):
@@ -132,13 +113,18 @@ def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, sellin
     
     if solar_available:
         solar = np.array((pd.read_csv(f_solar).values).flatten())
-        usage -= solar
-        usage = np.maximum(0, usage)
+        diff = np.minimum(usage, solar)
+        usage -= diff
+        solar -= diff
+        assert all(solar >= 0), "Solar output is negative"
+        assert all(usage >= 0), "Usage is negative"
+    else:
+        solar = None
         
     sell_prices = np.array((pd.read_csv(f_rce).values).flatten())
     date = parse_date_from_path(f_price)
     
-    battery_load_time, grid_time, buy, sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, battery, load_to_sell, provider, tariff=tariff, staying_static=staying_static, date=date)
+    battery_load_time, grid_time, buy, sell, month_const_cost_1, buy_prices, sell_prices = run_best_algos_one_day(prices, usage, sell_prices, solar, battery, load_to_sell, provider, tariff=tariff, staying_static=staying_static, date=date)
     
 
     res_algos = round(benchmark(battery_load_time,grid_time,buy, sell,buy_prices, sell_prices,  prices, selling_buying, usage, battery),3)
@@ -290,4 +276,4 @@ def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11",
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=7, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G11")
+    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=True, tariff="G13", staying_static=False, starting_tariff="G11")
