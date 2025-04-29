@@ -3,9 +3,10 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 # from solar.solar_cell import SolarPanel
-from calculator import simulate, run_best_algos_one_day, calculate_one_day
+from calculator import simulate, run_best_algos_one_day, calculate_one_day, total_profit
 from backend.const import BATTERIES
 import numpy as np
+from battery_handler.generate_bat_params import make_battery
 
 app = FastAPI()
 
@@ -173,7 +174,39 @@ def benchmark_algos_cost(request: LoadingRequest):
         "res_algos": res_algos_list,
         "res_benchmark": res_benchmark_list,
     }
-    
-    
+
+
+class CapacityRequest(BaseModel):
+    capacity: float
+
+@app.post("/api/estimate_savings")
+def estimate_savings(req: CapacityRequest):
+    batt = make_battery(req.capacity)
+
+    profit, months_of_history = total_profit(
+        battery=batt,
+        load_to_sell=True,
+        provider="pge",
+        switching_from_static=False,
+        solar_avaialable=False,
+        daily_usage=100,
+        tariff="G14",
+        staying_static=False,
+        starting_tariff="G11",
+    )
+
+    if months_of_history == 0:
+        raise HTTPException(500, "No historical data")
+
+    avg_profit_month = profit / months_of_history
+    if avg_profit_month <= 0:
+        roi_months = None
+    else:
+        roi_months = batt.get_real_price() / avg_profit_month
+
+    return {
+        "annual_savings": round(avg_profit_month * 12, 0),   # PLN / year
+        "roi": None if roi_months is None else round(roi_months / 12, 1),  # years
+    }
 
 # Run with: uvicorn api:app --reload
