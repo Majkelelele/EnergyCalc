@@ -82,40 +82,52 @@ def best_algos_ever(buy_prices: np.ndarray, sell_prices, usages: np.ndarray, bat
     
     battery_load_curr = 0
     
+    needs = list(sorted(range(SIZE), key=lambda x: buy_prices[x], reverse=True))
+    
     for i in range(SIZE):
+        heapq.heappush(info_list, Info(loading_per_segment, battery_cost_per_kwh + buy_prices[i], i))
+
+    temp_heap = []
+    print(f"ENTERING NEW DAY")
+    for i in needs:
+
         price = float(buy_prices[i])
         usage = float(usages[i])
         assert usage >= 0, "usage < 0"
-        
+        print(f"need = {i}")
         
         while info_list and info_list[0].get_cost() < price and usage > 0 and battery_load_curr < battery_cap:
             curr_period = heapq.heappop(info_list)
-            cum_use = np.cumsum(battery_use_time)
-            cum_load = np.cumsum(battery_load_time)
-            battery_load = cum_load - cum_use
-            # print(battery_load.round(2))
-            battery_load_curr = np.max(battery_load[curr_period.get_start():i])
-            remaining_energy = curr_period.get_remaining_energy()
-            remaining_cap = max(0,battery_cap - battery_load_curr)
-            # print(f"cap = {remaining_cap}, battery_load_curr = {battery_load_curr}, battery_cap = {battery_cap}")
-            
-            to_load = min(remaining_cap, min(usage, remaining_energy))
-            # print(f"to_load = {to_load}")
+            if curr_period.get_start() < i:
+                cum_use = np.cumsum(battery_use_time)
+                cum_load = np.cumsum(battery_load_time)
+                battery_load = cum_load - cum_use
+                # print(battery_load.round(2))
+                battery_load_curr = np.max(battery_load[curr_period.get_start():i])
+                remaining_energy = curr_period.get_remaining_energy()
+                remaining_cap = max(0,battery_cap - battery_load_curr)
+                # print(f"cap = {remaining_cap}, battery_load_curr = {battery_load_curr}, battery_cap = {battery_cap}")
+                
+                to_load = min(remaining_cap, min(usage, remaining_energy))
+                # print(f"to_load = {to_load}")
 
-            if to_load == usage or to_load == remaining_cap:
-                curr_period.lower_remaining_energy(to_load)
-                if curr_period.get_remaining_energy() > 0:
-                    heapq.heappush(info_list, curr_period)
-            battery_use_time[i] += to_load
-            usage -= to_load
-            battery_load_curr += to_load
-            battery_load_time[curr_period.get_start()] += to_load
+                if to_load == usage or to_load == remaining_cap:
+                    curr_period.lower_remaining_energy(to_load)
+                    if curr_period.get_remaining_energy() > 0:
+                        heapq.heappush(info_list, curr_period)
+                battery_use_time[i] += to_load
+                usage -= to_load
+                battery_load_curr += to_load
+                battery_load_time[curr_period.get_start()] += to_load
+            else:   
+                temp_heap.append(curr_period)
                 
         
         if usage > 0:
             grid_time[i] += usage
+        for i in temp_heap:
+            heapq.heappush(info_list, curr_period)
             
-        heapq.heappush(info_list, Info(loading_per_segment, battery_cost_per_kwh + price, i))
         
     final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
         
