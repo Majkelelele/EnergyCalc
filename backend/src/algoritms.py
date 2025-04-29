@@ -2,46 +2,55 @@ import heapq
 from battery_handler.battery_handler import Battery
 from backend.const import SIZE
 import numpy as np
-import pandas as pd
 
-
-
-def load_only_to_sell(battery_load, buy_prices, sell_prices, battery):
+def load_only_to_sell(battery_load: np.ndarray,
+                      buy_prices: np.ndarray,
+                      sell_prices: np.ndarray,
+                      battery: Battery):
+    SIZE = len(buy_prices)
     free_capacity = np.full(SIZE, battery.capacity) - battery_load
     battery_usage_cost = battery.one_kwh_cost()
-    
-    n = len(buy_prices)
-    buy_time = np.zeros(n)  # Stores amount of energy bought at each index
-    sell_time = np.zeros(n)  # Stores amount of energy sold at each index
-    
-    buy_idx = None  # Stores the last buy index
-    
-    for i in range(n - 1):
-        # Buying condition: Local minima and free capacity available
-        effective_buy_price = buy_prices[i] + battery_usage_cost
-        if buy_idx is None or effective_buy_price < buy_prices[buy_idx] + battery_usage_cost:
-            buy_idx = i
-        
-        # Lookahead strategy to find better selling opportunities
-        if buy_idx is not None:
-            future_max_price = max(sell_prices[i:])  # Find highest price in the remaining periods
-            
-            if  sell_prices[i] >= future_max_price * 0.95 and sell_prices[i] > buy_prices[buy_idx] + battery_usage_cost:  # Sell only if close to future peak
-                # Buy as much as possible at buy_idx and sell it here
-                energy_bought = np.min(free_capacity[buy_idx:i+1])                
-                # Adjust free capacity between buy_idx and i (holding energy until selling)
-                for t in range(buy_idx, i + 1):
-                    free_capacity[t] -= energy_bought
-                
-                # Store buy and sell amounts
-                buy_time[buy_idx] += energy_bought
-                sell_time[i] += energy_bought
-                
-                # Reset buy index after selling
-                buy_idx += 1
-    
-    return buy_time, sell_time
 
+    buy_time  = np.zeros(SIZE, dtype=float)
+    sell_time = np.zeros(SIZE, dtype=float)
+
+    # 1) Build array of future peaks in one pass
+    future_max = np.empty(SIZE, dtype=float)
+    max_so_far = -np.inf
+    for i in range(SIZE - 1, -1, -1):
+        max_so_far = max(max_so_far, sell_prices[i])
+        future_max[i] = max_so_far
+
+    buy_idx = None
+    for i in range(SIZE - 1):
+        eff_buy = buy_prices[i] + battery_usage_cost
+
+        # pick lowest effective buy index so far
+        if buy_idx is None or eff_buy < buy_prices[buy_idx] + battery_usage_cost:
+            buy_idx = i
+
+        # check selling condition
+        if (sell_prices[i] >= 0.95 * future_max[i] and
+            sell_prices[i] > buy_prices[buy_idx] + battery_usage_cost):
+
+            # clamp by true current free capacity
+            avail = free_capacity[buy_idx:i+1].min()
+            if avail <= 0:
+                # nothing left to sell from that buy slot
+                buy_idx += 1
+                continue
+
+            # record transactions
+            buy_time[buy_idx]  += avail
+            sell_time[i]       += avail
+
+            # immediately reduce free capacity so we can't oversell later
+            free_capacity[buy_idx:i+1] -= avail
+
+            # advance buy_idx so we don’t reuse an exhausted slot
+            buy_idx = None
+
+    return buy_time, sell_time
 
 
 def best_algos_ever(buy_prices: np.ndarray,
