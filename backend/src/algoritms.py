@@ -5,30 +5,6 @@ import numpy as np
 import pandas as pd
 
 
-class Info:
-    def __init__(self, remaining_energy, cost, start):
-        self.remaining_energy = remaining_energy
-        self.cost = cost
-        self.start = start
-
-    def __lt__(self, other):
-        if(self.cost == other.get_cost()):
-            return self.start < other.start
-        return self.cost < other.get_cost()
-
-    def get_cost(self):
-        return self.cost
-
-    def get_remaining_energy(self):
-        return self.remaining_energy
-
-    def lower_remaining_energy(self, amount):
-        self.remaining_energy -= amount
-
-    def get_start(self):
-        return self.start
- 
- 
 
 def load_only_to_sell(battery_load, buy_prices, sell_prices, battery):
     free_capacity = np.full(SIZE, battery.capacity) - battery_load
@@ -72,8 +48,7 @@ def best_algos_ever(buy_prices: np.ndarray,
                     sell_prices: np.ndarray,
                     usages: np.ndarray,
                     battery: Battery,
-                    load_to_sell: bool = True,
-                    provider: str = "enea"):
+                    load_to_sell: bool = True):
     assert SIZE == usages.shape[0], "prices and usages must have 96 elements"
     
     battery_cost_per_kwh = battery.one_kwh_cost()
@@ -107,8 +82,7 @@ def best_algos_ever(buy_prices: np.ndarray,
                 break
 
             # available headroom before period t is min(cap - soc[k]) for k in [start_i, t)
-            headroom = battery_cap - soc[start_i:t]
-            max_move = headroom.min() if headroom.size > 0 else battery_cap
+            max_move = (battery_cap - soc[start_i:t]).min()
             to_move = min(rem, need, max_move)
 
             if to_move <= 1e-8:
