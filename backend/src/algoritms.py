@@ -57,6 +57,7 @@ def best_algos_ever(buy_prices: np.ndarray,
                     sell_prices: np.ndarray,
                     usages: np.ndarray,
                     battery: Battery,
+                    solar_free: np.ndarray,
                     load_to_sell: bool = True):
     assert SIZE == usages.shape[0], "prices and usages must have 96 elements"
     
@@ -75,6 +76,11 @@ def best_algos_ever(buy_prices: np.ndarray,
     # Build heap of all possible charge-slots
     info_heap = [(buy_prices[i] + battery_cost_per_kwh, i, loading_per_segment)
                  for i in range(SIZE)]
+    if solar_free is not None:
+        for i in range(SIZE):
+            if solar_free[i] > 1e-8:
+                info_heap.append((0, i, solar_free[i]))
+                
     heapq.heapify(info_heap)
 
     # Handle most expensive usage times first

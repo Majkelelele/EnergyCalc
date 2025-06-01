@@ -1,5 +1,6 @@
 from backend.src.battery_handler.battery_handler import Battery
 import numpy as np
+from backend.src.battery_handler.generate_bat_params import make_battery
 
 def fill_quarters_G12(val1, val2):
 # val2 > val1, so val2 is the more expensive part of the day
@@ -101,6 +102,7 @@ BATTERIES = [
         life_cycles=4000,
         is_grant_reduction=True
     ),
+    # make_battery(50),
     # Battery(
     #     price=9800, 
     #     capacity=15, 
