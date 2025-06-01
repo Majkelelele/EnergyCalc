@@ -189,7 +189,7 @@ def estimate_savings(req: CapacityRequest):
         provider="pge",
         switching_from_static=False,
         solar_avaialable=False,
-        daily_usage=100,
+        daily_usage=8,
         tariff="G14",
         staying_static=False,
         starting_tariff="G11",
