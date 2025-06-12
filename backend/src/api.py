@@ -182,6 +182,7 @@ def benchmark_algos_cost(request: LoadingRequest):
 
 class CapacityRequest(BaseModel):
     capacity: float
+    daily_usage: float
 
 @app.post("/api/estimate_savings")
 def estimate_savings(req: CapacityRequest):
@@ -189,11 +190,11 @@ def estimate_savings(req: CapacityRequest):
 
     profit, months_of_history = total_profit(
         battery=batt,
-        load_to_sell=True,
+        load_to_sell=False,
         provider="pge",
         switching_from_static=False,
         solar_avaialable=False,
-        daily_usage=8,
+        daily_usage=req.daily_usage,
         tariff="G14",
         staying_static=False,
         starting_tariff="G11",
