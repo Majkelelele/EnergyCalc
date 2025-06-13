@@ -193,7 +193,7 @@ def estimate_savings(req: CapacityRequest):
         switching_from_static=False,
         solar_avaialable=False,
         daily_usage=req.daily_usage,
-        tariff="G14",
+        tariff="G13",
         staying_static=False,
         starting_tariff="G11",
     )
