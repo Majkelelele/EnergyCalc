@@ -181,16 +181,14 @@ def benchmark_algos_cost(request: LoadingRequest):
 
 
 class CapacityRequest(BaseModel):
-    capacity: float
     daily_usage: float
 
 @app.post("/api/estimate_savings")
 def estimate_savings(req: CapacityRequest):
-    batt = make_battery(req.capacity)
 
     profit, months_of_history = total_profit(
-        battery=batt,
-        load_to_sell=False,
+        battery=BATTERIES[2],
+        load_to_sell=True,
         provider="pge",
         switching_from_static=False,
         solar_avaialable=False,
@@ -204,14 +202,9 @@ def estimate_savings(req: CapacityRequest):
         raise HTTPException(500, "No historical data")
 
     avg_profit_month = profit / months_of_history
-    if avg_profit_month <= 0:
-        roi_months = None
-    else:
-        roi_months = batt.get_real_price() / avg_profit_month
 
     return {
         "annual_savings": round(avg_profit_month * 12, 0),   # PLN / year
-        "roi": None if roi_months is None else round(roi_months / 12, 1),  # years
     }
 
 # Run with: uvicorn api:app --reload
