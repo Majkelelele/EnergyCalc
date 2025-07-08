@@ -1,6 +1,7 @@
 import heapq
 from battery_handler.battery_handler import Battery
 from backend.const import SIZE
+from linear import optimise_battery
 import numpy as np
 
 def load_only_to_sell(battery_load: np.ndarray,
@@ -58,76 +59,19 @@ def best_algos_ever(buy_prices: np.ndarray,
                     usages: np.ndarray,
                     battery: Battery,
                     solar_free: np.ndarray,
-                    load_to_sell: bool = True):
+                    load_to_sell: bool = False):
     assert SIZE == usages.shape[0], "prices and usages must have 96 elements"
     
     battery_cost_per_kwh = battery.one_kwh_cost()
     loading_per_segment = battery.charging_per_segment()
     battery_cap = battery.capacity
-
-    # Outputs
-    battery_load_time = np.zeros(SIZE, dtype=float)
-    battery_use_time  = np.zeros(SIZE, dtype=float)
-    grid_time         = np.zeros(SIZE, dtype=float)
-
-    # Track SoC at each period, updated incrementally
-    soc = np.zeros(SIZE, dtype=float)
-
-    # Build heap of all possible charge-slots
-    info_heap = [(buy_prices[i] + battery_cost_per_kwh, i, loading_per_segment)
-                 for i in range(SIZE)]
-    if solar_free is not None:
-        for i in range(SIZE):
-            if solar_free[i] > 1e-8:
-                info_heap.append((0, i, solar_free[i]))
-                
-    heapq.heapify(info_heap)
-
-    # Handle most expensive usage times first
-    for t in np.argsort(-buy_prices):
-        price_t = buy_prices[t]
-        need = usages[t]
-
-        # Try to cover 'need' from earlier cheap charges
-        while need > 1e-8 and info_heap and info_heap[0][1] < t:
-            cost_i, start_i, rem = heapq.heappop(info_heap)
-            if cost_i >= price_t:
-                # No more profitable slots
-                heapq.heappush(info_heap, (cost_i, start_i, rem))
-                break
-
-            # available headroom before period t is min(cap - soc[k]) for k in [start_i, t)
-            max_move = (battery_cap - soc[start_i:t]).min()
-            to_move = min(rem, need, max_move)
-
-            if to_move <= 1e-8:
-                continue
-
-            # record flows
-            battery_load_time[start_i] += to_move
-            battery_use_time[t] += to_move
-
-            # bump SoC on [start_i, t)
-            soc[start_i:t] += to_move
-
-            need -= to_move
-            rem  -= to_move
-
-            # push back any leftover from this charge slot
-            if rem > 1e-8:
-                heapq.heappush(info_heap, (cost_i, start_i, rem))
-
-        # leftover from grid
-        if need > 1e-8:
-            grid_time[t] = need
-
-    # sanity check: never exceeded capacity
-    assert np.all(soc <= battery_cap + 1e-6), "SoC exceeded battery capacity!"
+    
+    sched, cost = optimise_battery(buy_prices, usages, C = battery_cap, c_batt=battery_cost_per_kwh, P_ch = loading_per_segment, P_dis=loading_per_segment)
+    # print(sched)
+    battery_load_time, battery_use_time, grid_time  = sched["charge"], sched["discharge"], sched["grid_buy"]
+    final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
 
     
-            
-        
-    final_cum_use = np.cumsum(battery_load_time) - np.cumsum(battery_use_time)
         
     if load_to_sell:
         buy_time, sell_time = load_only_to_sell(final_cum_use, buy_prices, sell_prices, battery)

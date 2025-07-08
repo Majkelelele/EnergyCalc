@@ -12,24 +12,25 @@ import os
 import datetime
 
 
-ARR = NDArray[np.float32]
+ARR = NDArray[np.float64]
 
 
-def is_overloaded(battery_loading:ARR, usage:ARR, grid_loading:ARR, buy:ARR, sell:ARR, total_capacity:float, tol = TOL):
-    battery = 0  # Initial battery level
-    
-    # Simulate battery level over time
-    for i in range(SIZE):
-        battery += battery_loading[i]
-        battery -= usage[i]
-        battery += grid_loading[i]
-        battery += buy[i]
-        battery -= sell[i]
+def is_overloaded(
+    battery_loading: ARR,
+    usage: ARR,
+    grid_loading: ARR,
+    buy: ARR,
+    sell: ARR,
+    total_capacity: float,
+    tol: float = 1e-5  # Default tolerance
+) -> bool:
+    arrays = [battery_loading, usage, grid_loading, buy, sell]
+    if not all(arr.shape == battery_loading.shape for arr in arrays):
+        raise ValueError("All input arrays must have the same shape")
 
-        if battery > total_capacity + tol:
-            return True 
-            
-    return False 
+    net_change = battery_loading - usage + grid_loading + buy - sell
+    battery_levels = np.cumsum(net_change)
+    return bool(np.any(battery_levels > total_capacity + tol))
 
 # benchmark accepts two lists, each list contains pairs - (index of 15min period in 24h - starting from 00:00, ending 23:45 -> 96 indices posibles):
 # 1) - battery_loading - at given index, how much power to load battery -> price at loading time, not using time;
@@ -110,6 +111,7 @@ def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, sellin
     prices = np.array((pd.read_csv(f_price).values).flatten())
     # usage already in kWh
     usage = np.array((pd.read_csv(f_usage).values).flatten())
+    # print(f"ussage = {sum(usage)}")
     
     if solar_available:
         solar = np.array((pd.read_csv(f_solar).values).flatten())
@@ -139,7 +141,7 @@ def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, sellin
         case "pge":
             buy_prices, sell_prices,  month_const_cost_2 =  calculate_pge_prices(prices, sell_prices,starting_tariff, switching_from_static)
         case "tauron":
-            buy_prices, sell_prices,  month_const_cost_2 =  calculate_tauron_prices(prices, sell_prices, starting_tariff, switching_from_static, date=date)
+            buy_prices, sell_prices,  month_const_cost_2 =  calculate_tauron_prices(prices, sell_prices, starting_tariff, switching_from_static)
         case _:
             raise ValueError("Wrong provider")
     selling_buying_fake = {"sold": 0, "bought": 0}
@@ -148,7 +150,7 @@ def calculate_one_day(f_price, f_usage, f_rce, f_solar, battery: Battery, sellin
     return res_algos, res_benchmark, month_const_cost_1, month_const_cost_2
     
 def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching_from_static=False, solar_avaialable=False,
-                 daily_usage=5, tariff="G11", staying_static=False, starting_tariff="G11"):
+                 daily_usage=5.0, tariff="G11", staying_static=False, starting_tariff="G11"):
     prices_pattern = "../data_months/tge/*.csv"
     prices_files = sorted(glob.glob(prices_pattern))
     
@@ -190,7 +192,7 @@ def total_profit(battery: Battery, load_to_sell=True, provider="enea", switching
     
     cost_algos -= deductible
     cost_algos -= WITHDRAWABLE_RATE * max(0, selling_buying["sold"] - deductible)
-    print(f"algos total cost = {cost_algos}, benchmark total cost = {cost_benchmark}")
+    print(f"algos total cost per month = {cost_algos / months}, benchmark total cost per month = {cost_benchmark / months}")
     loosing = max(0, selling_buying["sold"] - deductible) * (1 - WITHDRAWABLE_RATE)
     print(f"loosing {loosing}")
     
@@ -230,50 +232,10 @@ def simulate(do_print = False, grant=False, daily_usage=7.5, load_to_sell=True, 
         print()
     return BATTERIES, avg_profits, expected_months_to_returns, expected_months_cycles
 
-def simulate_only_static_saving_one_bat(battery: Battery, load_to_sell=False, provider="enea", switching_from_static=True, daily_usage=5, tarifs = ["G11", "G12", "G13"]):
-    prices_pattern = "../data_months/tge/*.csv"
-    prices_files = sorted(glob.glob(prices_pattern))
-    
-    generate_energy_usage_days(total_usage=daily_usage, days=len(prices_files))
-    usage_pattern = "../data_months/usage/*.csv"
-    usage_files = sorted(glob.glob(usage_pattern))
-   
-    rce_prices_pattern = "../data_months/rce/*.csv"
-    rce_prices_files = sorted(glob.glob(rce_prices_pattern))
-    
-    solar_pattern = "../data_months/solar_output/*.csv"
-    solar_files = sorted(glob.glob(solar_pattern))
-    
-    avg_max_cost = 0
-    avg_min_cost = 1000000
-    for tariff in tarifs:
-        results_only_grid = []
-        results_michal = []
-        selling_buying = {"sold": 0, "bought": 0, "total_cost":0}
-        for i, (f_price, f_usage, f_rce, f_solar) in enumerate(zip(prices_files, usage_files, rce_prices_files, solar_files)):
-            res_algos, res_benchmark, _, _ = calculate_one_day(f_price,f_usage,f_rce, f_solar, battery,load_to_sell,provider,switching_from_static,  tariff=tariff, staying_static=True, selling_buying=selling_buying)
-            results_michal.append(res_algos)
-            results_only_grid.append(res_benchmark)
-        months = float(len(prices_files)) / 30.0
-        algos_cost = sum(results_michal)
-        benchmark_cost = sum(results_only_grid)
-        avg_max_cost = max(avg_max_cost, benchmark_cost/ months)
-        avg_min_cost = min(avg_min_cost, algos_cost/ months)
-        print(f"average cost per month for tarif {tariff} = {algos_cost/ months}")
-        print(f"benchmark = {benchmark_cost/ months}")
-    profit = avg_max_cost - avg_min_cost
-    print(f"avg min cost = {avg_min_cost}, avg max_cost = {avg_max_cost}, profit = {profit}")
-    print(f"month to return =  {battery.get_real_price() / profit}")
-    print("")
-    
 
-def simulate_only_static_saving(provider="enea", daily_usage=5, tarifs = ["G11", "G12", "G13"], load_to_sell=False):
-    for i, bat in enumerate(BATTERIES):
-        print(bat)
-        simulate_only_static_saving_one_bat(bat, provider=provider, daily_usage=daily_usage,tarifs=tarifs, load_to_sell=load_to_sell)
 
 
     
 if __name__ == "__main__":
     # simulate_only_static_saving(provider="tauron", daily_usage=7, tarifs=["G11", "G12", "G13", "G14"], load_to_sell=True)
-    simulate(do_print=True, grant=True, daily_usage=3, load_to_sell=True, provider="tauron", switching_from_static=False, solar_avaialable=True, tariff="G13", staying_static=True, starting_tariff="G13")
+    simulate(do_print=True, grant=True, daily_usage=5, load_to_sell=False, provider="enea", switching_from_static=False, solar_avaialable=False, tariff="G13", staying_static=False, starting_tariff="G11")

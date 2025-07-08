@@ -1,0 +1,7 @@
+{
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportAttributeAccessIssue": "none",
+    "reportCallIssue": "none",
+    "reportOperatorIssue": "none"
+  }
+}

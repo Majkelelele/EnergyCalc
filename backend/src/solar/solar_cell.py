@@ -154,7 +154,9 @@ class PVModel:
         Only the output values are saved, without timestamps.
         """
         # Create the output directory if it doesn't exist
+        print("save ac_data")
         if not os.path.exists(self.csv_output_path):
+            print("new dir")
             os.makedirs(self.csv_output_path)
         
         # Convert the series into a DataFrame with a proper column name
@@ -168,6 +170,7 @@ class PVModel:
             date = new_date.strftime("%Y-%m-%d")
             print(f"for date = {date}, energy generated =  {sum(group.values)}")
             filename = os.path.join(self.csv_output_path, f"{date}.csv")
+            print(f"{filename=}")
             group.to_csv(filename, index=False, header=True)
 
         
@@ -199,7 +202,7 @@ def function_for_michal_zmyslony(
     module_name: str = 'Canadian_Solar_CS5P_220M___2009_',
     inverter_library: str = 'CECInverter',
     inverter_name: str = 'ABB__PVI_3_0_OUTD_S_US__208V_',
-    modules_per_string: int = 3,
+    modules_per_string: int = 5,
     strings_per_inverter: int = 1,
     temperature_model: str = 'open_rack_glass_glass',
     # PVModel parameters
@@ -261,7 +264,7 @@ if __name__ == "__main__":
         inverter_library='CECInverter',
         inverter_name='ABB__PVI_3_0_OUTD_S_US__208V_',
         modules_per_string=2,
-        strings_per_inverter=3,
+        strings_per_inverter=10,
         temperature_model='open_rack_glass_glass',
     )
     pv_system = PVModel(

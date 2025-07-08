@@ -3,7 +3,4 @@ backend/scripts/google-chrome.deb
 __pycache__
 *-info
 *usage*
-# backend/data_months/usage_*.csv
-# backend/data_months/solar_energy/*
-# backend/data_months/*
-# backend/data/*
+data_months/solar_output/
